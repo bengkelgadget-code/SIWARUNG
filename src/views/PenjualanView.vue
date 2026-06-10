@@ -150,11 +150,11 @@ function getAvailableStock(product: Product) {
 
           <!-- Scanner Icon Button (icon-only + tooltip) -->
           <button
-            class="relative group p-2 bg-neutral-100 hover:bg-neutral-200 rounded-lg transition-colors shrink-0"
+            class="relative group p-2.5 bg-primary-500 hover:bg-primary-600 rounded-lg transition-colors shrink-0 glossy-effect shadow-md"
             title="Scan Barcode"
             @click="showScanner = !showScanner"
           >
-            <svg class="w-4 h-4 text-neutral-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                 d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
             </svg>
@@ -208,8 +208,8 @@ function getAvailableStock(product: Product) {
               <p class="text-xs text-neutral-400">{{ product.category }} | {{ product.barcode }}</p>
             </div>
             <div class="text-right shrink-0 ml-3">
-              <p class="font-bold text-primary-600 text-sm">Rp {{ product.price.toLocaleString('id-ID') }}</p>
-              <p class="text-xs text-neutral-400" :class="getAvailableStock(product) <= 5 ? 'text-red-500' : ''">Stok: {{ getAvailableStock(product) }}</p>
+              <p class="font-bold text-primary-600 text-base">{{ product.price.toLocaleString('id-ID') }}</p>
+              <p class="text-[10px] text-neutral-400" :class="getAvailableStock(product) <= 5 ? 'text-red-500' : ''">Stok: {{ getAvailableStock(product) }}</p>
             </div>
           </div>
         </div>
@@ -248,8 +248,8 @@ function getAvailableStock(product: Product) {
               </div>
               <p class="font-medium text-neutral-800 text-xs truncate">{{ product.name }}</p>
               <p class="text-[10px] text-neutral-400 truncate">{{ product.category }}</p>
-              <p class="font-bold text-primary-600 text-xs mt-1">Rp {{ product.price.toLocaleString('id-ID') }}</p>
-              <p class="text-[10px] mt-0.5" :class="getAvailableStock(product) <= 5 ? 'text-red-500' : 'text-neutral-400'">
+              <p class="font-bold text-primary-600 text-sm mt-1">{{ product.price.toLocaleString('id-ID') }}</p>
+              <p class="text-[9px] mt-0.5" :class="getAvailableStock(product) <= 5 ? 'text-red-500' : 'text-neutral-400'">
                 Stok: {{ getAvailableStock(product) }}
               </p>
             </div>

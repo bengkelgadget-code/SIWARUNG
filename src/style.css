@@ -20,7 +20,7 @@
 
 @layer components {
   .btn-primary {
-    @apply bg-primary-500 hover:bg-primary-600 text-white font-medium py-2 px-4 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.98];
+    @apply bg-primary-500 hover:bg-primary-600 text-white font-medium py-2 px-4 rounded-lg transition-all duration-200 shadow-md active:scale-[0.98] glossy-effect;
   }
 
   .btn-secondary {
@@ -45,5 +45,12 @@
 
   .sidebar-link-active {
     @apply flex items-center gap-3 px-4 py-3 rounded-xl text-white bg-primary-500 shadow-md shadow-primary-200 transition-all duration-200 font-medium;
+  }
+}
+
+@layer utilities {
+  .glossy-effect {
+    background-image: linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0) 40%, rgba(0,0,0,0.05) 100%);
+    box-shadow: inset 0 2px 3px rgba(255,255,255,0.5), inset 0 -2px 3px rgba(0,0,0,0.15), 0 4px 6px -1px rgba(0,0,0,0.1);
   }
 }

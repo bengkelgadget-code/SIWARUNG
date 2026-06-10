@@ -54,7 +54,7 @@ function handleCardClick(product: Product) {
       <div class="overflow-x-auto">
         <table class="w-full">
           <thead>
-            <tr class="bg-primary-500 text-left text-sm text-white font-bold">
+            <tr class="bg-primary-500 text-left text-sm text-white font-bold glossy-effect">
               <th class="px-6 py-4 w-16 rounded-tl-lg">Foto</th>
               <th class="px-6 py-4">Barcode</th>
               <th class="px-6 py-4">Nama Produk</th>
@@ -112,8 +112,8 @@ function handleCardClick(product: Product) {
                   {{ product.category }}
                 </span>
               </td>
-              <td class="px-6 py-4 text-center font-medium">
-                Rp {{ product.price.toLocaleString('id-ID') }}
+              <td class="px-6 py-4 text-center font-bold text-base text-primary-600">
+                {{ product.price.toLocaleString('id-ID') }}
               </td>
               <td class="px-6 py-4 text-center">
                 <span
@@ -212,12 +212,12 @@ function handleCardClick(product: Product) {
           <!-- Info -->
           <div class="ml-3 flex-1 min-w-0">
             <p class="font-bold text-neutral-800 text-sm truncate">{{ product.name }}</p>
-            <p class="text-xs text-neutral-400 truncate mt-0.5" :class="product.stock <= 5 ? 'text-red-500 font-medium' : ''">Stok: {{ product.stock }}</p>
+            <p class="text-[10px] text-neutral-400 truncate mt-0.5" :class="product.stock <= 5 ? 'text-red-500 font-medium' : ''">Stok: {{ product.stock }}</p>
           </div>
           <!-- Price -->
           <div class="shrink-0 text-right ml-2">
-            <p class="font-bold text-primary-600 text-sm">Rp {{ product.price.toLocaleString('id-ID') }}</p>
-            <p class="text-[10px] text-neutral-400 mt-1">Geser ke kiri >></p>
+            <p class="font-bold text-primary-600 text-base">{{ product.price.toLocaleString('id-ID') }}</p>
+            <p class="text-[9px] text-neutral-400 mt-1">Geser ke kiri >></p>
           </div>
         </div>
       </div>
