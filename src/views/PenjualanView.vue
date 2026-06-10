@@ -40,6 +40,22 @@ function clearSearch() {
   aiSuggestion.value = ''
 }
 
+async function handleEnter() {
+  const q = searchQuery.value.trim()
+  if (!q) return
+
+  // Cek apakah input adalah barcode yang sama persis (dukungan Scanner Fisik)
+  const exactMatch = productStore.products.find(p => p.barcode === q)
+  if (exactMatch) {
+    cartStore.addItem(exactMatch)
+    clearSearch()
+    return
+  }
+
+  // Jika bukan barcode persis, lakukan Pencarian AI
+  await handleAiSearch()
+}
+
 async function handleAiSearch() {
   if (!searchQuery.value.trim()) return
 
@@ -108,7 +124,7 @@ function openPayment(amount: number) {
               type="text"
               placeholder="Cari barang... (cth: minuman dingin, snack)"
               class="input-field pl-9 pr-8 text-xs"
-              @keyup.enter="handleAiSearch"
+              @keyup.enter="handleEnter"
             />
             <!-- Clear button (X) -->
             <button
