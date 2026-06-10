@@ -17,6 +17,10 @@ onMounted(async () => {
   await startScanner(scannerElementId, handleBarcodeScanned)
 })
 
+onUnmounted(() => {
+  stopScanner()
+})
+
 async function handleBarcodeScanned(code: string) {
   const product = await productStore.fetchByBarcode(code)
   if (product) {

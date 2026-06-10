@@ -94,6 +94,7 @@ function addToCart(product: Product) {
 
 function onBarcodeScanned(product: Product) {
   cartStore.addItem(product)
+  showScanner.value = false
 }
 
 function openPayment(amount: number) {
