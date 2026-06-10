@@ -58,7 +58,7 @@ function handleCardClick(product: Product) {
               <th class="px-6 py-4 w-16 rounded-tl-lg">Foto</th>
               <th class="px-6 py-4">Barcode</th>
               <th class="px-6 py-4">Nama Produk</th>
-              <th class="px-6 py-4">Kategori</th>
+              <th class="px-6 py-4 text-center">Kategori</th>
               <th class="px-6 py-4 text-center">Harga</th>
               <th class="px-6 py-4 text-center">Stok</th>
               <th class="px-6 py-4 text-center">Satuan</th>
@@ -107,7 +107,7 @@ function handleCardClick(product: Product) {
                 <p class="font-medium text-neutral-800">{{ product.name }}</p>
                 <p class="text-xs text-neutral-400 mt-0.5">{{ product.description || '-' }}</p>
               </td>
-              <td class="px-6 py-4">
+              <td class="px-6 py-4 text-center">
                 <span class="text-sm bg-primary-50 text-primary-600 px-2.5 py-1 rounded-lg font-medium">
                   {{ product.category }}
                 </span>
