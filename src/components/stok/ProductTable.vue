@@ -54,15 +54,15 @@ function handleCardClick(product: Product) {
       <div class="overflow-x-auto">
         <table class="w-full">
           <thead>
-            <tr class="bg-neutral-50 text-left text-sm text-neutral-500">
-              <th class="px-6 py-4 font-medium w-16">Foto</th>
-              <th class="px-6 py-4 font-medium">Barcode</th>
-              <th class="px-6 py-4 font-medium">Nama Produk</th>
-              <th class="px-6 py-4 font-medium">Kategori</th>
-              <th class="px-6 py-4 font-medium text-center">Harga</th>
-              <th class="px-6 py-4 font-medium text-center">Stok</th>
-              <th class="px-6 py-4 font-medium text-center">Satuan</th>
-              <th class="px-6 py-4 font-medium text-center">Aksi</th>
+            <tr class="bg-neutral-50 text-left text-sm text-black font-bold">
+              <th class="px-6 py-4 w-16">Foto</th>
+              <th class="px-6 py-4">Barcode</th>
+              <th class="px-6 py-4">Nama Produk</th>
+              <th class="px-6 py-4">Kategori</th>
+              <th class="px-6 py-4 text-center">Harga</th>
+              <th class="px-6 py-4 text-center">Stok</th>
+              <th class="px-6 py-4 text-center">Satuan</th>
+              <th class="px-6 py-4 text-center">Aksi</th>
             </tr>
           </thead>
           <tbody>

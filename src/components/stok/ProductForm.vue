@@ -135,7 +135,7 @@ function confirmAiResult() {
   form.value.category = r.category || form.value.category
   form.value.price = r.price || form.value.price
   form.value.unit = r.unit || form.value.unit
-  form.value.description = r.description || form.value.description
+  form.value.description = '' // Kosongkan keterangan sesuai permintaan
   showVerification.value = false
   aiResult.value = null
 }
@@ -354,13 +354,13 @@ function handleSubmit() {
 
             <!-- Nama Produk -->
             <div class="col-span-2">
-              <label class="block text-xs font-medium text-neutral-600 mb-0.5">Nama Produk</label>
+              <label class="block text-xs font-bold text-black mb-0.5">Nama Produk</label>
               <input v-model="form.name" type="text" class="input-field" placeholder="Nama produk" required />
             </div>
 
             <!-- Kategori -->
             <div>
-              <label class="block text-xs font-medium text-neutral-600 mb-0.5">Kategori</label>
+              <label class="block text-xs font-bold text-black mb-0.5">Kategori</label>
               <select v-model="form.category" class="input-field" required>
                 <option value="" disabled>Pilih kategori</option>
                 <option v-for="cat in categories" :key="cat" :value="cat">{{ cat }}</option>
@@ -369,7 +369,7 @@ function handleSubmit() {
 
             <!-- Satuan -->
             <div>
-              <label class="block text-xs font-medium text-neutral-600 mb-0.5">Satuan</label>
+              <label class="block text-xs font-bold text-black mb-0.5">Satuan</label>
               <select v-model="form.unit" class="input-field" required>
                 <option v-for="u in units" :key="u" :value="u">{{ u }}</option>
               </select>
@@ -377,19 +377,19 @@ function handleSubmit() {
 
             <!-- Harga -->
             <div>
-              <label class="block text-xs font-medium text-neutral-600 mb-0.5">Harga (Rp)</label>
+              <label class="block text-xs font-bold text-black mb-0.5">Harga (Rp)</label>
               <input v-model.number="form.price" type="number" class="input-field" placeholder="0" min="0" required />
             </div>
 
             <!-- Stok -->
             <div>
-              <label class="block text-xs font-medium text-neutral-600 mb-0.5">Stok</label>
+              <label class="block text-xs font-bold text-black mb-0.5">Stok</label>
               <input v-model.number="form.stock" type="number" class="input-field" placeholder="0" min="0" required />
             </div>
 
             <!-- Barcode (below price, above description) -->
             <div class="col-span-2">
-              <label class="block text-xs font-medium text-neutral-600 mb-0.5">Barcode</label>
+              <label class="block text-xs font-bold text-black mb-0.5">Barcode</label>
               <div class="flex gap-2">
                 <input
                   v-model="form.barcode"
@@ -426,13 +426,13 @@ function handleSubmit() {
 
             <!-- Deskripsi -->
             <div class="col-span-2">
-              <label class="block text-xs font-medium text-neutral-600 mb-0.5">Deskripsi (opsional)</label>
+              <label class="block text-xs font-bold text-black mb-0.5">Deskripsi (opsional)</label>
               <textarea v-model="form.description" class="input-field" rows="1" placeholder="Deskripsi singkat..."></textarea>
             </div>
 
             <!-- Gambar Produk -->
             <div class="col-span-2">
-              <label class="block text-xs font-medium text-neutral-600 mb-0.5">Gambar Produk</label>
+              <label class="block text-xs font-bold text-black mb-0.5">Gambar Produk</label>
               <div class="flex items-start gap-2.5">
                 <!-- Image Preview -->
                 <div v-if="imagePreview" class="relative w-16 h-16 rounded-lg overflow-hidden border border-neutral-200 shrink-0">
