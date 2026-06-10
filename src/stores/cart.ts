@@ -92,6 +92,27 @@ export const useCartStore = defineStore('cart', () => {
     }
   }
 
+  async function deleteTransaction(transactionId: string) {
+    try {
+      const trx = transactions.value.find(t => t.id === transactionId)
+      if (trx) {
+        // Restore stock
+        for (const item of trx.items) {
+          await productApi.updateStock(item.product.id, item.quantity)
+        }
+      }
+      
+      const { error } = await supabase.from('transactions').delete().eq('id', transactionId)
+      if (error) throw error
+      
+      transactions.value = transactions.value.filter(t => t.id !== transactionId)
+    } catch (e: any) {
+      console.error('Failed to delete transaction', e)
+      alert('Gagal menghapus transaksi: ' + e.message)
+      throw e
+    }
+  }
+
   return {
     items,
     transactions,
@@ -103,5 +124,6 @@ export const useCartStore = defineStore('cart', () => {
     clearCart,
     checkout,
     loadTransactions,
+    deleteTransaction,
   }
 })

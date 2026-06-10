@@ -42,6 +42,15 @@ function openDetail(trx: Transaction) {
 function closeDetail() {
   selectedTransaction.value = null
 }
+
+async function handleDeleteTransaction(id: string) {
+  try {
+    await cartStore.deleteTransaction(id)
+    closeDetail()
+  } catch (e) {
+    // Error is handled in the store
+  }
+}
 </script>
 
 <template>
@@ -127,6 +136,7 @@ function closeDetail() {
       v-if="selectedTransaction" 
       :transaction="selectedTransaction"
       @close="closeDetail"
+      @delete="handleDeleteTransaction"
     />
   </div>
 </template>
