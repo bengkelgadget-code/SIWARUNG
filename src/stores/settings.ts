@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
+import { supabase } from '@/lib/supabase'
 import type { BluetoothDevice } from '@/types'
 
 export const useSettingsStore = defineStore('settings', () => {
@@ -43,11 +44,17 @@ export const useSettingsStore = defineStore('settings', () => {
     saveSettings()
   }
 
-  function updateStoreSettings(settings: { name?: string; address?: string; geminiApiKey?: string }) {
+  async function updateStoreSettings(settings: { name?: string; address?: string; geminiApiKey?: string }) {
     if (settings.name !== undefined) storeName.value = settings.name
     if (settings.address !== undefined) storeAddress.value = settings.address
     if (settings.geminiApiKey !== undefined) geminiApiKey.value = settings.geminiApiKey
     saveSettings()
+
+    if (settings.geminiApiKey !== undefined) {
+      await supabase
+        .from('settings')
+        .upsert({ id: 'global', geminiApiKey: settings.geminiApiKey })
+    }
   }
 
   function saveSettings() {
@@ -63,7 +70,7 @@ export const useSettingsStore = defineStore('settings', () => {
     )
   }
 
-  function loadSettings() {
+  async function loadSettings() {
     const stored = localStorage.getItem('settings')
     if (stored) {
       const data = JSON.parse(stored)
@@ -74,6 +81,23 @@ export const useSettingsStore = defineStore('settings', () => {
       geminiApiKey.value = data.geminiApiKey || ''
     }
     checkBluetoothSupport()
+
+    try {
+      const { data, error } = await supabase
+        .from('settings')
+        .select('geminiApiKey')
+        .eq('id', 'global')
+        .maybeSingle()
+
+      if (!error && data) {
+        if (data.geminiApiKey) {
+           geminiApiKey.value = data.geminiApiKey
+           saveSettings()
+        }
+      }
+    } catch (e) {
+      console.error('Gagal mengambil pengaturan dari Supabase', e)
+    }
   }
 
   return {

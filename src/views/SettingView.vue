@@ -11,8 +11,8 @@ const storeAddress = ref(settingsStore.storeAddress)
 const geminiApiKey = ref(settingsStore.geminiApiKey)
 const saved = ref(false)
 
-function saveStoreSettings() {
-  settingsStore.updateStoreSettings({
+async function saveStoreSettings() {
+  await settingsStore.updateStoreSettings({
     name: storeName.value,
     address: storeAddress.value,
     geminiApiKey: geminiApiKey.value,
