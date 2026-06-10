@@ -1,5 +1,5 @@
 import axios from 'axios'
-import type { Product, AISearchResult, AIProductLookup, AIInvoiceResult } from '@/types'
+import type { Product } from '@/types'
 import { supabase } from '@/lib/supabase'
 
 const api = axios.create({
@@ -9,23 +9,7 @@ const api = axios.create({
   },
 })
 
-// Attach Gemini API Key to AI routes
-api.interceptors.request.use((config) => {
-  if (config.url?.startsWith('/ai/')) {
-    const stored = localStorage.getItem('settings')
-    if (stored) {
-      try {
-        const apiKey = JSON.parse(stored).geminiApiKey
-        if (apiKey) {
-          config.headers['x-gemini-api-key'] = apiKey
-        }
-      } catch (e) {}
-    }
-  }
-  return config
-})
-
-// Helper to handle Supabase response like Axios
+// Product API via Supabase
 const handleSupabase = async (request: Promise<{ data: any; error: any }>) => {
   const { data, error } = await request
   if (error) throw new Error(error.message)
@@ -55,25 +39,6 @@ export const productApi = {
     const newStock = (current?.stock || 0) + quantity
     return handleSupabase(supabase.from('products').update({ stock: newStock }).eq('id', id).select().single())
   },
-}
-
-// AI Search API
-export const aiApi = {
-  searchProducts: (query: string) =>
-    api.post<AISearchResult>('/ai/search', { query }),
-
-  lookupProduct: (barcode: string) =>
-    api.post<AIProductLookup>('/ai/lookup', { barcode }),
-
-  scanInvoice: (imageFile: File) => {
-    const formData = new FormData()
-    formData.append('image', imageFile)
-    return api.post<AIInvoiceResult>('/ai/scan-invoice', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    })
-  }
 }
 
 export default api

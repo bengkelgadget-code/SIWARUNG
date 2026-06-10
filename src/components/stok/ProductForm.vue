@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { Html5Qrcode } from 'html5-qrcode'
-import { aiApi } from '@/api'
+import { geminiApi } from '@/lib/gemini'
 import type { Product, AIProductLookup } from '@/types'
 
 const props = defineProps<{
@@ -45,6 +45,7 @@ const aiLookupError = ref('')
 const imagePreview = ref('')
 const capturedImage = ref('')
 const showImageCapture = ref(false)
+const imageCapturePurpose = ref<'product' | 'ai'>('product')
 const imageScanner = ref<Html5Qrcode | null>(null)
 
 onMounted(() => {
@@ -93,32 +94,28 @@ async function handleBarcodeScanned(code: string) {
 }
 
 // ─── AI Scanner ───
+// ─── AI Scanner (via Image) ───
 async function openAiScanner() {
-  scanMode.value = 'ai'
-  scanError.value = ''
+  scanMode.value = 'none'
   aiLookupError.value = ''
-  await nextTick()
-  await startScan('form-ai-scanner', handleAiScanned)
+  scanError.value = ''
+  imageCapturePurpose.value = 'ai'
+  await openImageCapture()
 }
 
-async function handleAiScanned(code: string) {
-  await stopScanner()
-  scanMode.value = 'none'
-
+async function processAiImage(base64Image: string) {
   isLookingUp.value = true
-  form.value.barcode = code
-
   try {
-    const { data } = await aiApi.lookupProduct(code)
+    const data = await geminiApi.identifyProductFromImage(base64Image)
     aiResult.value = data
 
     if (data.found) {
       showVerification.value = true
     } else {
-      aiLookupError.value = data.message || 'AI tidak dapat mengenali produk dari barcode ini.'
+      aiLookupError.value = 'AI tidak dapat mengenali produk dari foto ini.'
     }
   } catch (err: any) {
-    aiLookupError.value = err.response?.data?.message || 'Gagal menghubungi server AI.'
+    aiLookupError.value = err.message || 'Gagal menghubungi server AI.'
   } finally {
     isLookingUp.value = false
   }
@@ -143,6 +140,9 @@ function rejectAiResult() {
 
 // ─── Image Capture ───
 async function openImageCapture() {
+  if (imageCapturePurpose.value !== 'ai') {
+    imageCapturePurpose.value = 'product'
+  }
   showImageCapture.value = true
   await nextTick()
   try {
@@ -170,14 +170,21 @@ async function captureImage() {
       if (ctx) {
         ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height)
         capturedImage.value = canvas.toDataURL('image/jpeg', 0.7)
-        imagePreview.value = capturedImage.value
-        form.value.image = capturedImage.value
+        
+        if (imageCapturePurpose.value === 'product') {
+          imagePreview.value = capturedImage.value
+          form.value.image = capturedImage.value
+        }
       }
     }
     await imageScanner.value.stop()
     imageScanner.value.clear()
     imageScanner.value = null
     showImageCapture.value = false
+
+    if (imageCapturePurpose.value === 'ai' && capturedImage.value) {
+      processAiImage(capturedImage.value)
+    }
   } catch {
     showImageCapture.value = false
   }
@@ -277,16 +284,7 @@ function handleSubmit() {
         </div>
 
         <!-- AI Scanner View -->
-        <div v-if="scanMode === 'ai'" class="px-5 pt-3">
-          <div class="bg-neutral-900 rounded-lg overflow-hidden relative">
-            <div id="form-ai-scanner" class="w-full"></div>
-            <div class="absolute inset-0 pointer-events-none border-2 border-primary-400/50 rounded-lg m-3"></div>
-          </div>
-          <div class="flex items-center justify-between mt-2">
-            <p class="text-xs text-neutral-500">Arahkan kamera ke barcode produk...</p>
-            <button type="button" class="btn-secondary text-xs px-2.5 py-1" @click="cancelScan">Batal</button>
-          </div>
-        </div>
+        <!-- AI Scanner View (Removed, now uses Image Capture) -->
 
         <!-- AI Loading -->
         <div v-if="isLookingUp" class="px-5 pt-3">
@@ -447,6 +445,14 @@ function handleSubmit() {
               <div v-if="showImageCapture" class="mt-2">
                 <div class="bg-neutral-900 rounded-lg overflow-hidden relative">
                   <div id="form-image-capture" class="w-full"></div>
+                  <!-- Frame overlay if AI scan -->
+                  <div v-if="imageCapturePurpose === 'ai'" class="absolute inset-0 flex items-center justify-center pointer-events-none p-4">
+                     <div class="w-full h-full border-2 border-dashed border-primary-400/70 rounded-xl relative">
+                        <div class="absolute -top-3 left-1/2 -translate-x-1/2 bg-black/60 text-white text-[10px] px-2 py-1 rounded-full backdrop-blur-sm">
+                           Arahkan kemasan produk ke sini
+                        </div>
+                     </div>
+                  </div>
                 </div>
                 <div class="flex items-center justify-between mt-2">
                   <button type="button" class="btn-primary text-xs px-3 py-1.5 flex items-center gap-1.5" @click="captureImage">
@@ -457,7 +463,7 @@ function handleSubmit() {
                     </svg>
                     Ambil Foto
                   </button>
-                  <button type="button" class="btn-secondary text-xs px-2.5 py-1.5" @click="showImageCapture = false">Batal</button>
+                  <button type="button" class="btn-secondary text-xs px-2.5 py-1.5" @click="showImageCapture = false; imageScanner?.stop().then(() => imageScanner?.clear()).catch(()=>{})">Batal</button>
                 </div>
               </div>
             </div>

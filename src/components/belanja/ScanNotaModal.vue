@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { aiApi } from '@/api'
+import { geminiApi } from '@/lib/gemini'
 import { usePurchaseStore } from '@/stores/purchases'
 import { useProductStore } from '@/stores/products'
 import type { PurchaseItem, AIInvoiceResult } from '@/types'
@@ -24,34 +24,43 @@ async function handleFileSelected(event: Event) {
 
   step.value = 'processing'
   
-  try {
-    const response = await aiApi.scanInvoice(file)
-    extractedData.value = response.data
-    
-    // Match products with database
-    editableItems.value = response.data.items.map(item => {
-      // Very basic matching by name (for mockup purposes)
-      const matchedProduct = productStore.products.find(p => p.name.toLowerCase().includes(item.name.toLowerCase()) || item.name.toLowerCase().includes(p.name.toLowerCase()))
+  const reader = new FileReader()
+  reader.onload = async (e) => {
+    const base64Image = e.target?.result as string
+    if (!base64Image) {
+      alert('Gagal membaca file gambar.')
+      step.value = 'upload'
+      return
+    }
+
+    try {
+      const data = await geminiApi.scanInvoiceFromImage(base64Image)
+      extractedData.value = data
       
-      return {
-        ...item,
-        productId: matchedProduct?.id,
-        // Mark if the new buyPrice is higher than we might expect. Since we only have `price` (sellPrice) in Product,
-        // we assume buyPrice > sellPrice is a warning, or just mock a warning.
-        sellPrice: matchedProduct?.price,
-        isPriceWarning: matchedProduct ? item.buyPrice >= matchedProduct.price * 0.9 : false
-      }
-    })
-    
-    invoiceNo.value = response.data.invoiceNo
-    totalCost.value = response.data.totalCost
-    
-    step.value = 'review'
-  } catch (e: any) {
-    const errorMsg = e.response?.data?.error || 'Gagal memproses nota'
-    alert(errorMsg)
-    step.value = 'upload'
+      // Match products with database
+      editableItems.value = data.items.map(item => {
+        // Very basic matching by name
+        const matchedProduct = productStore.products.find(p => p.name.toLowerCase().includes(item.name.toLowerCase()) || item.name.toLowerCase().includes(p.name.toLowerCase()))
+        
+        return {
+          ...item,
+          productId: matchedProduct?.id,
+          sellPrice: matchedProduct?.price,
+          isPriceWarning: matchedProduct ? item.buyPrice >= matchedProduct.price * 0.9 : false
+        }
+      })
+      
+      invoiceNo.value = data.invoiceNo
+      totalCost.value = data.totalCost
+      
+      step.value = 'review'
+    } catch (e: any) {
+      const errorMsg = e.message || 'Gagal memproses nota'
+      alert(errorMsg)
+      step.value = 'upload'
+    }
   }
+  reader.readAsDataURL(file)
 }
 
 function removeItem(index: number) {

@@ -6,7 +6,7 @@ import PaymentModal from '@/components/penjualan/PaymentModal.vue'
 import { useCartStore } from '@/stores/cart'
 import { useProductStore } from '@/stores/products'
 import { useLayoutStore } from '@/stores/layout'
-import { aiApi } from '@/api'
+import { geminiApi } from '@/lib/gemini'
 import type { Product } from '@/types'
 
 const cartStore = useCartStore()
@@ -47,9 +47,17 @@ async function handleAiSearch() {
   aiSuggestion.value = ''
 
   try {
-    const { data } = await aiApi.searchProducts(searchQuery.value)
-    searchResults.value = data.products
-    aiSuggestion.value = data.suggestion
+    const { data } = await geminiApi.searchProducts(searchQuery.value, productStore.products)
+    
+    if (data.items && data.items.length > 0) {
+      searchResults.value = data.items
+        .map((item: any) => productStore.products.find(p => p.id === item.id))
+        .filter((p: Product | undefined) => p !== undefined) as Product[]
+      aiSuggestion.value = `Ditemukan ${searchResults.value.length} barang mirip.`
+    } else {
+      searchResults.value = []
+      aiSuggestion.value = 'AI tidak menemukan barang yang cocok.'
+    }
   } catch {
     const query = searchQuery.value.toLowerCase()
     searchResults.value = productStore.products.filter(
