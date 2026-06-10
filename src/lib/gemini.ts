@@ -33,7 +33,7 @@ export const geminiApi = {
 
     const genAI = new GoogleGenerativeAI(apiKey)
     const model = genAI.getGenerativeModel({
-      model: 'gemini-1.5-flash',
+      model: 'gemini-2.5-flash',
       generationConfig: {
         responseMimeType: 'application/json',
       }
@@ -60,12 +60,14 @@ Struktur JSON yang WAJIB Anda ikuti:
     
     try {
       const result = await model.generateContent([prompt, imagePart])
-      const text = result.response.text()
+      let text = result.response.text()
+      // Strip markdown code blocks if any
+      text = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim()
       const json = JSON.parse(text)
       return json as AIProductLookup
     } catch (err: any) {
       console.error('Gemini Product Error:', err)
-      throw new Error('Gagal memproses gambar dengan AI. Pastikan API Key valid.')
+      throw new Error(err.message || 'Gagal memproses gambar dengan AI.')
     }
   },
 
@@ -76,7 +78,7 @@ Struktur JSON yang WAJIB Anda ikuti:
 
     const genAI = new GoogleGenerativeAI(apiKey)
     const model = genAI.getGenerativeModel({
-      model: 'gemini-1.5-flash',
+      model: 'gemini-2.5-flash',
       generationConfig: {
         responseMimeType: 'application/json',
       }
@@ -104,12 +106,13 @@ Struktur JSON WAJIB:
     
     try {
       const result = await model.generateContent([prompt, imagePart])
-      const text = result.response.text()
+      let text = result.response.text()
+      text = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim()
       const json = JSON.parse(text)
       return json as AIInvoiceResult
     } catch (err: any) {
       console.error('Gemini Invoice Error:', err)
-      throw new Error('Gagal memproses gambar struk dengan AI. Pastikan gambar jelas dan API Key valid.')
+      throw new Error(err.message || 'Gagal memproses gambar struk dengan AI.')
     }
   },
 
@@ -121,7 +124,7 @@ Struktur JSON WAJIB:
 
     const genAI = new GoogleGenerativeAI(apiKey)
     const model = genAI.getGenerativeModel({
-      model: 'gemini-1.5-flash',
+      model: 'gemini-2.5-flash',
       generationConfig: {
         responseMimeType: 'application/json',
       }
@@ -149,12 +152,13 @@ Struktur JSON WAJIB:
 
     try {
       const result = await model.generateContent(prompt)
-      const text = result.response.text()
+      let text = result.response.text()
+      text = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim()
       const json = JSON.parse(text)
       return { data: json }
     } catch (err: any) {
       console.error('Gemini Search Error:', err)
-      throw new Error('Gagal melakukan pencarian cerdas dengan AI.')
+      throw new Error(err.message || 'Gagal melakukan pencarian cerdas dengan AI.')
     }
   }
 }
