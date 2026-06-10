@@ -34,7 +34,7 @@ async function callGeminiWithRetry(
   maxRetries = 2,
   onProgress?: (msg: string) => void
 ): Promise<string> {
-  const modelsToTry = ['gemini-2.5-flash', 'gemini-2.0-flash']
+  const modelsToTry = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash']
   
   for (const modelName of modelsToTry) {
     const genAI = new GoogleGenerativeAI(apiKey)

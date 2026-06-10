@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { Html5Qrcode } from 'html5-qrcode'
+import Cropper from 'cropperjs'
+import 'cropperjs/dist/cropper.css'
 import { geminiApi } from '@/lib/gemini'
 import type { Product, AIProductLookup } from '@/types'
 
@@ -47,6 +49,12 @@ const imagePreview = ref('')
 const capturedImage = ref('')
 const imageCapturePurpose = ref<'product' | 'ai'>('product')
 const fileInput = ref<HTMLInputElement | null>(null)
+
+// ─── Cropper State ───
+const showCropper = ref(false)
+const cropImageSrc = ref('')
+const cropperImgRef = ref<HTMLImageElement | null>(null)
+let cropperInstance: Cropper | null = null
 
 onMounted(() => {
   if (props.product) {
@@ -166,16 +174,55 @@ function handleFileSelected(event: Event) {
     const base64Image = e.target?.result as string
     if (!base64Image) return
 
-    capturedImage.value = base64Image
+    cropImageSrc.value = base64Image
+    showCropper.value = true
     
-    if (imageCapturePurpose.value === 'product') {
-      imagePreview.value = base64Image
-      form.value.image = base64Image
-    } else if (imageCapturePurpose.value === 'ai') {
-      processAiImage(base64Image)
-    }
+    if (fileInput.value) fileInput.value.value = '' // reset input
+    
+    nextTick(() => {
+      if (cropperImgRef.value) {
+        if (cropperInstance) cropperInstance.destroy()
+        cropperInstance = new Cropper(cropperImgRef.value, {
+          viewMode: 1,
+          autoCropArea: 0.9,
+          background: false,
+          responsive: true,
+        })
+      }
+    })
   }
   reader.readAsDataURL(file)
+}
+
+function cancelCrop() {
+  showCropper.value = false
+  cropImageSrc.value = ''
+  if (cropperInstance) {
+    cropperInstance.destroy()
+    cropperInstance = null
+  }
+}
+
+function confirmCrop() {
+  if (!cropperInstance) return
+  const canvas = cropperInstance.getCroppedCanvas({
+    maxWidth: 1024,
+    maxHeight: 1024,
+  })
+  if (!canvas) return
+  
+  const croppedBase64 = canvas.toDataURL('image/jpeg', 0.85)
+  
+  // Update form image
+  imagePreview.value = croppedBase64
+  form.value.image = croppedBase64
+  capturedImage.value = croppedBase64
+  
+  cancelCrop()
+  
+  if (imageCapturePurpose.value === 'ai') {
+    processAiImage(croppedBase64)
+  }
 }
 
 function removeImage() {
@@ -503,6 +550,39 @@ function handleSubmit() {
         <div class="p-5 border-t border-neutral-100 flex gap-3">
           <button class="btn-secondary flex-1" @click="rejectAiResult">Tolak</button>
           <button class="btn-primary flex-1" @click="confirmAiResult">Ya, Gunakan</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Image Cropper Modal -->
+    <div
+      v-if="showCropper"
+      class="fixed inset-0 z-[70] flex items-center justify-center bg-black/90 backdrop-blur-sm p-4"
+    >
+      <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[calc(100vh-2rem)]">
+        <div class="px-5 py-3 border-b border-neutral-100 flex items-center justify-between shrink-0">
+          <h3 class="text-base font-bold text-neutral-800">
+            Potong Gambar
+          </h3>
+          <button class="p-1.5 hover:bg-neutral-100 rounded-lg transition-colors" @click="cancelCrop">
+            <svg class="w-4 h-4 text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        
+        <div class="flex-1 bg-black p-2 min-h-[300px] flex items-center justify-center">
+          <img ref="cropperImgRef" :src="cropImageSrc" class="max-w-full max-h-full" alt="Crop" />
+        </div>
+        
+        <div class="p-4 border-t border-neutral-100 flex gap-3 shrink-0">
+          <button class="btn-secondary flex-1" @click="cancelCrop">Batal</button>
+          <button class="btn-primary flex-1 flex items-center justify-center gap-1.5" @click="confirmCrop">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+            </svg>
+            Selesai Crop
+          </button>
         </div>
       </div>
     </div>
