@@ -27,6 +27,12 @@ const router = createRouter({
       component: () => import('@/views/BelanjaBarangView.vue'),
       meta: { title: 'Belanja Barang' },
     },
+    {
+      path: '/riwayat',
+      name: 'riwayat',
+      component: () => import('@/views/HistoryView.vue'),
+      meta: { title: 'Riwayat Transaksi' },
+    },
   ],
 })
 

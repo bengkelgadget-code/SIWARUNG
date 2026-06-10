@@ -26,6 +26,11 @@ const menuItems = [
     icon: 'truck',
   },
   {
+    name: 'Riwayat Transaksi',
+    path: '/riwayat',
+    icon: 'history',
+  },
+  {
     name: 'Pengaturan',
     path: '/setting',
     icon: 'settings',
@@ -83,6 +88,11 @@ function navigate(path: string) {
         <!-- Truck Icon -->
         <svg v-if="item.icon === 'truck'" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 14h.01M12 14h.01M16 14h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-4l-3-3zM8 12v-2m4 2v-2m4 2v-2" />
+        </svg>
+
+        <!-- History Icon -->
+        <svg v-if="item.icon === 'history'" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
 
         <!-- Settings Icon -->
