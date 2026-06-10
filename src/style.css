@@ -40,11 +40,11 @@
   }
 
   .sidebar-link {
-    @apply flex items-center gap-3 px-4 py-3 rounded-xl text-neutral-600 hover:text-primary-600 hover:bg-primary-50 transition-all duration-200 font-medium;
+    @apply flex items-center gap-3 px-4 py-3 rounded-xl text-neutral-600 hover:text-primary-600 hover:bg-primary-50 transition-all duration-200 font-medium w-full text-left;
   }
 
   .sidebar-link-active {
-    @apply flex items-center gap-3 px-4 py-3 rounded-xl text-white bg-primary-500 shadow-md shadow-primary-200 transition-all duration-200 font-medium glossy-effect;
+    @apply flex items-center gap-3 px-4 py-3 rounded-xl text-white bg-primary-500 shadow-md shadow-primary-200 transition-all duration-200 font-medium glossy-effect w-full text-left;
   }
 }
 
