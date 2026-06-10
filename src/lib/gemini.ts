@@ -25,19 +25,61 @@ function base64ToGenerativePart(base64DataUrl: string) {
   }
 }
 
-export const geminiApi = {
-  // Recognize a product from an image
-  async identifyProductFromImage(base64Image: string): Promise<AIProductLookup> {
-    const apiKey = getApiKey()
-    if (!apiKey) throw new Error('API Key Gemini belum dikonfigurasi di menu Pengaturan.')
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
 
+async function callGeminiWithRetry(
+  apiKey: string,
+  prompt: string,
+  imagePart?: any,
+  maxRetries = 2,
+  onProgress?: (msg: string) => void
+): Promise<string> {
+  const modelsToTry = ['gemini-2.5-flash', 'gemini-2.0-flash']
+  
+  for (const modelName of modelsToTry) {
     const genAI = new GoogleGenerativeAI(apiKey)
     const model = genAI.getGenerativeModel({
-      model: 'gemini-2.5-flash',
-      generationConfig: {
-        responseMimeType: 'application/json',
-      }
+      model: modelName,
+      generationConfig: { responseMimeType: 'application/json' }
     })
+    
+    let attempt = 0
+    while (attempt <= maxRetries) {
+      try {
+        if (attempt > 0) {
+          onProgress?.(`Server sibuk, mencoba ulang (ke-${attempt} dengan ${modelName})...`)
+        } else if (modelName !== modelsToTry[0]) {
+          onProgress?.(`Beralih ke model cadangan (${modelName})...`)
+        }
+
+        const parts = imagePart ? [prompt, imagePart] : [prompt]
+        const result = await model.generateContent(parts)
+        return result.response.text()
+      } catch (err: any) {
+        const is503 = err.message?.includes('503') || err.message?.includes('high demand')
+        const is429 = err.message?.includes('429') || err.message?.includes('quota')
+        
+        if (is503 || is429) {
+          if (attempt === maxRetries) break
+          attempt++
+          const delay = attempt * 1500
+          onProgress?.(`Server penuh, menunggu ${delay/1000} detik...`)
+          await sleep(delay)
+        } else {
+          throw err // Invalid API key or other hard errors
+        }
+      }
+    }
+  }
+  
+  throw new Error('Server AI sedang sangat sibuk. Semua percobaan gagal. Silakan coba lagi nanti.')
+}
+
+export const geminiApi = {
+  // Recognize a product from an image
+  async identifyProductFromImage(base64Image: string, onProgress?: (msg: string) => void): Promise<AIProductLookup> {
+    const apiKey = getApiKey()
+    if (!apiKey) throw new Error('API Key Gemini belum dikonfigurasi di menu Pengaturan.')
 
     const prompt = `Anda adalah sistem AI pendeteksi barang kasir (POS) warung/minimarket di Indonesia.
 Saya akan memberikan gambar sebuah produk. Anda harus mengidentifikasinya dan mengembalikan data dalam format JSON.
@@ -59,30 +101,21 @@ Struktur JSON yang WAJIB Anda ikuti:
     const imagePart = base64ToGenerativePart(base64Image)
     
     try {
-      const result = await model.generateContent([prompt, imagePart])
-      let text = result.response.text()
-      // Strip markdown code blocks if any
+      let text = await callGeminiWithRetry(apiKey, prompt, imagePart, 2, onProgress)
       text = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim()
       const json = JSON.parse(text)
       return json as AIProductLookup
     } catch (err: any) {
       console.error('Gemini Product Error:', err)
-      throw new Error(err.message || 'Gagal memproses gambar dengan AI.')
+      const msg = err.message.includes('API key not valid') ? 'API Key tidak valid.' : err.message
+      throw new Error(msg || 'Gagal memproses gambar dengan AI.')
     }
   },
 
   // Scan Invoice (Nota) from an image
-  async scanInvoiceFromImage(base64Image: string): Promise<AIInvoiceResult> {
+  async scanInvoiceFromImage(base64Image: string, onProgress?: (msg: string) => void): Promise<AIInvoiceResult> {
     const apiKey = getApiKey()
     if (!apiKey) throw new Error('API Key Gemini belum dikonfigurasi di menu Pengaturan.')
-
-    const genAI = new GoogleGenerativeAI(apiKey)
-    const model = genAI.getGenerativeModel({
-      model: 'gemini-2.5-flash',
-      generationConfig: {
-        responseMimeType: 'application/json',
-      }
-    })
 
     const prompt = `Anda adalah asisten AI untuk sistem kasir POS (SIWARUNG).
 Tugas Anda adalah membaca gambar struk / nota belanja barang (kulakan) dan mengekstrak datanya ke format JSON.
@@ -105,8 +138,7 @@ Struktur JSON WAJIB:
     const imagePart = base64ToGenerativePart(base64Image)
     
     try {
-      const result = await model.generateContent([prompt, imagePart])
-      let text = result.response.text()
+      let text = await callGeminiWithRetry(apiKey, prompt, imagePart, 2, onProgress)
       text = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim()
       const json = JSON.parse(text)
       return json as AIInvoiceResult
@@ -121,14 +153,6 @@ Struktur JSON WAJIB:
     const apiKey = getApiKey()
     if (!apiKey) throw new Error('API Key Gemini belum dikonfigurasi di menu Pengaturan.')
     if (!products.length) return { data: { items: [] } }
-
-    const genAI = new GoogleGenerativeAI(apiKey)
-    const model = genAI.getGenerativeModel({
-      model: 'gemini-2.5-flash',
-      generationConfig: {
-        responseMimeType: 'application/json',
-      }
-    })
 
     const catalog = products.map(p => ({ id: p.id, name: p.name, category: p.category, desc: p.description }))
     
@@ -151,8 +175,7 @@ Struktur JSON WAJIB:
 }`
 
     try {
-      const result = await model.generateContent(prompt)
-      let text = result.response.text()
+      let text = await callGeminiWithRetry(apiKey, prompt, undefined, 1)
       text = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim()
       const json = JSON.parse(text)
       return { data: json }

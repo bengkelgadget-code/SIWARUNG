@@ -37,6 +37,7 @@ const scanError = ref('')
 
 // ─── AI Lookup State ───
 const isLookingUp = ref(false)
+const aiLoadingMsg = ref('AI sedang mencari informasi produk...')
 const aiResult = ref<AIProductLookup | null>(null)
 const showVerification = ref(false)
 const aiLookupError = ref('')
@@ -100,8 +101,11 @@ async function openAiScanner() {
 
 async function processAiImage(base64Image: string) {
   isLookingUp.value = true
+  aiLoadingMsg.value = 'AI sedang mencari informasi produk...'
   try {
-    const data = await geminiApi.identifyProductFromImage(base64Image)
+    const data = await geminiApi.identifyProductFromImage(base64Image, (msg) => {
+      aiLoadingMsg.value = msg
+    })
     aiResult.value = data
 
     if (data.found) {
@@ -279,7 +283,7 @@ function handleSubmit() {
               <path class="opacity-75" fill="currentColor"
                 d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
             </svg>
-            <span class="text-xs font-medium text-primary-700">AI sedang mencari informasi produk...</span>
+            <span class="text-xs font-medium text-primary-700">{{ aiLoadingMsg }}</span>
           </div>
         </div>
 
