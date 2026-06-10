@@ -1,14 +1,13 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { storeToRefs } from 'pinia'
 import { useSettingsStore } from '@/stores/settings'
 import { useBluetooth } from '@/composables/useBluetooth'
 
 const settingsStore = useSettingsStore()
 const { isSupported, connecting, error, scanAndConnect } = useBluetooth()
 
-const storeName = ref(settingsStore.storeName)
-const storeAddress = ref(settingsStore.storeAddress)
-const geminiApiKey = ref(settingsStore.geminiApiKey)
+const { storeName, storeAddress, geminiApiKey } = storeToRefs(settingsStore)
 const saved = ref(false)
 
 async function saveStoreSettings() {
