@@ -5,14 +5,20 @@ import AppMainbar from '@/components/layout/AppMainbar.vue'
 import { useSettingsStore } from '@/stores/settings'
 import { useProductStore } from '@/stores/products'
 import { useLayoutStore } from '@/stores/layout'
+import { useCartStore } from '@/stores/cart'
+import { usePurchaseStore } from '@/stores/purchases'
 
 const settingsStore = useSettingsStore()
 const productStore = useProductStore()
 const layoutStore = useLayoutStore()
+const cartStore = useCartStore()
+const purchaseStore = usePurchaseStore()
 
 onMounted(() => {
   settingsStore.loadSettings()
   productStore.fetchProducts()
+  cartStore.loadTransactions()
+  purchaseStore.loadPurchases()
 })
 </script>
 

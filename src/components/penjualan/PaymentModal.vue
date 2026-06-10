@@ -32,9 +32,9 @@ function setAmount(amount: number) {
   paymentAmount.value = amount
 }
 
-function processPayment() {
+async function processPayment() {
   if (!isPaymentValid.value) return
-  transaction.value = cartStore.checkout(paymentAmount.value)
+  transaction.value = await cartStore.checkout(paymentAmount.value)
   showSuccess.value = true
 }
 

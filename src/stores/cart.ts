@@ -1,6 +1,8 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { CartItem, Product, Transaction } from '@/types'
+import { supabase } from '@/lib/supabase'
+import { productApi } from '@/api'
 
 export const useCartStore = defineStore('cart', () => {
   const items = ref<CartItem[]>([])
@@ -44,24 +46,50 @@ export const useCartStore = defineStore('cart', () => {
     items.value = []
   }
 
-  function checkout(payment: number): Transaction {
-    const transaction: Transaction = {
-      id: `TRX-${Date.now()}`,
-      items: [...items.value],
+  async function checkout(payment: number): Promise<Transaction> {
+    const transactionId = `TRX-${Date.now()}`
+    const transactionData = {
+      id: transactionId,
+      items: items.value,
       total: totalPrice.value,
       payment,
       change: payment - totalPrice.value,
-      createdAt: new Date().toISOString(),
+      // createdAt is handled by supabase default
     }
-    transactions.value.unshift(transaction)
-    localStorage.setItem('transactions', JSON.stringify(transactions.value))
-    clearCart()
-    return transaction
+
+    try {
+      // 1. Insert transaction to supabase
+      await supabase.from('transactions').insert([transactionData])
+      
+      // 2. Reduce stock for each item
+      for (const item of items.value) {
+        // Decrease stock (so we pass negative quantity)
+        await productApi.updateStock(item.product.id, -item.quantity)
+      }
+
+      const newTransaction: Transaction = {
+        ...transactionData,
+        createdAt: new Date().toISOString(),
+      }
+      transactions.value.unshift(newTransaction)
+      clearCart()
+      return newTransaction
+    } catch (e: any) {
+      console.error('Checkout failed', e)
+      alert('Gagal memproses transaksi: ' + e.message)
+      throw e
+    }
   }
 
-  function loadTransactions() {
-    const stored = localStorage.getItem('transactions')
-    if (stored) transactions.value = JSON.parse(stored)
+  async function loadTransactions() {
+    try {
+      const { data, error } = await supabase.from('transactions').select('*').order('createdAt', { ascending: false })
+      if (!error && data) {
+        transactions.value = data
+      }
+    } catch (e) {
+      console.error('Failed to load transactions')
+    }
   }
 
   return {
