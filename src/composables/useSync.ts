@@ -29,7 +29,13 @@ export function useSync() {
           if (item.type === 'ADD_TRANSACTION') {
             const trx = item.payload
             
-            // Format for supabase
+            // Check if already synced (to prevent duplicate key & double stock reduction)
+            const { data: existingTrx } = await supabase.from('transactions').select('id').eq('id', trx.id).maybeSingle()
+            if (existingTrx) {
+              await localDb.removeFromQueue(item.id)
+              continue
+            }
+
             const transactionData = {
               id: trx.id,
               items: trx.items,
@@ -50,6 +56,14 @@ export function useSync() {
           } 
           else if (item.type === 'DELETE_TRANSACTION') {
             const { id, items } = item.payload
+            
+            // Check if already deleted
+            const { data: existingTrx } = await supabase.from('transactions').select('id').eq('id', id).maybeSingle()
+            if (!existingTrx) {
+              await localDb.removeFromQueue(item.id)
+              continue
+            }
+
             const { error } = await supabase.from('transactions').delete().eq('id', id)
             if (error) throw error
             
@@ -58,15 +72,17 @@ export function useSync() {
               await productApi.updateStock(cartItem.product.id, cartItem.quantity)
             }
           }
-          // Note: We can add ADD_PRODUCT, UPDATE_PRODUCT, DELETE_PRODUCT if needed later.
-          // For now, product management assumes online or simple offline cache update.
 
           // Success, remove from queue
           await localDb.removeFromQueue(item.id)
         } catch (itemError: any) {
           console.error(`Failed to sync item ${item.id}:`, itemError)
-          // If it fails, we keep it in the queue for the next sync attempt
-          // Or if it's a critical error (like duplicate), we might need to handle it.
+          // Jika terjadi error dari API supabase yang bersifat permanen (misal RLS / invalid input),
+          // kita keluarkan dari antrean agar tidak memblokir item lainnya.
+          if (itemError?.code && ['42501', '23502', '23503', '42P01'].includes(itemError.code)) {
+            console.error('Permanent error detected, removing from queue:', itemError.message)
+            await localDb.removeFromQueue(item.id)
+          }
         }
       }
     } catch (e: any) {
