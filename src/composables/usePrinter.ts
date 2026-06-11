@@ -64,6 +64,7 @@ export function usePrinter() {
     isPrinting.value = true
     error.value = ''
 
+    try {
       const receiptData = formatReceipt(transaction, storeName, storeAddress)
       const encoder = new TextEncoder()
       const data = encoder.encode(receiptData)
