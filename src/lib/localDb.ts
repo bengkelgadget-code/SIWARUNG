@@ -3,7 +3,7 @@ import { get, set, del, keys } from 'idb-keyval'
 export const localDb = {
   // --- Products ---
   async setProducts(products: any[]) {
-    await set('products', products)
+    await set('products', JSON.parse(JSON.stringify(products)))
   },
   async getProducts(): Promise<any[]> {
     const data = await get('products')
@@ -12,7 +12,7 @@ export const localDb = {
 
   // --- Transactions ---
   async setTransactions(transactions: any[]) {
-    await set('transactions', transactions)
+    await set('transactions', JSON.parse(JSON.stringify(transactions)))
   },
   async getTransactions(): Promise<any[]> {
     const data = await get('transactions')
@@ -26,7 +26,7 @@ export const localDb = {
     queue.push({
       id: `SYNC-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
       type,
-      payload,
+      payload: JSON.parse(JSON.stringify(payload)),
       timestamp: Date.now()
     })
     await set('sync_queue', queue)

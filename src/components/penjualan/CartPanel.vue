@@ -37,6 +37,14 @@ function clearCart() {
   cartStore.clearCart()
   paymentAmountStr.value = ''
 }
+
+import { watch } from 'vue'
+
+watch(() => cartStore.items.length, (newLen) => {
+  if (newLen === 0) {
+    paymentAmountStr.value = ''
+  }
+})
 </script>
 
 <template>

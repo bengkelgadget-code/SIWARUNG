@@ -2,24 +2,25 @@
 import { ref, computed, onMounted } from 'vue'
 import BarcodeScanner from '@/components/penjualan/BarcodeScanner.vue'
 import CartPanel from '@/components/penjualan/CartPanel.vue'
-import PaymentModal from '@/components/penjualan/PaymentModal.vue'
 import { useCartStore } from '@/stores/cart'
 import { useProductStore } from '@/stores/products'
 import { useLayoutStore } from '@/stores/layout'
+import { useSettingsStore } from '@/stores/settings'
+import { usePrinter } from '@/composables/usePrinter'
 import { geminiApi } from '@/lib/gemini'
 import type { Product } from '@/types'
 
 const cartStore = useCartStore()
 const productStore = useProductStore()
 const layoutStore = useLayoutStore()
+const settingsStore = useSettingsStore()
+const { printReceipt } = usePrinter()
 
 const searchQuery = ref('')
 const searchResults = ref<Product[]>([])
 const isSearching = ref(false)
-const showPaymentModal = ref(false)
 const showScanner = ref(false)
 const aiSuggestion = ref('')
-const paymentAmountFromCart = ref(0)
 
 // Real-time filter: as user types, filter the catalog instantly
 const filteredProducts = computed(() => {
@@ -97,10 +98,26 @@ function onBarcodeScanned(product: Product) {
   showScanner.value = false
 }
 
-function openPayment(amount: number) {
+async function openPayment(amount: number) {
   if (cartStore.items.length === 0) return
-  paymentAmountFromCart.value = amount
-  showPaymentModal.value = true
+  
+  try {
+    const transaction = await cartStore.checkout(amount)
+    
+    // Auto print if printer is connected
+    if (settingsStore.printerDevice) {
+      await printReceipt(transaction, settingsStore.storeName, settingsStore.storeAddress)
+    }
+    
+    alert(`Transaksi Berhasil!\nKembalian: Rp ${transaction.change.toLocaleString('id-ID')}`)
+    
+    // Tutup modal mobile jika terbuka
+    if (layoutStore.isCartModalOpen) {
+      layoutStore.closeCartModal()
+    }
+  } catch (err: any) {
+    alert('Gagal memproses transaksi:\n' + err.message)
+  }
 }
 
 function getAvailableStock(product: Product) {
@@ -282,20 +299,10 @@ function getAvailableStock(product: Product) {
           </div>
           <!-- Content -->
           <div class="flex-1 overflow-hidden p-2 min-h-0 flex flex-col">
-            <CartPanel @pay="openPayment" class="flex-1 min-h-0" />
+            <CartPanel @pay="openPayment" ref="cartPanelMobileRef" class="flex-1 min-h-0" />
           </div>
         </div>
       </div>
-    </transition>
-
-    <!-- Modals -->
-    <transition name="modal">
-      <PaymentModal
-        v-if="showPaymentModal"
-        :total="cartStore.totalPrice"
-        :initial-amount="paymentAmountFromCart"
-        @close="showPaymentModal = false; paymentAmountFromCart = 0"
-      />
     </transition>
   </div>
 </template>

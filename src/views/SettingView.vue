@@ -21,13 +21,10 @@ async function saveStoreSettings() {
 }
 
 async function handleConnectPrinter() {
-  await scanAndConnect()
-  if (!error.value) {
-    const device = useBluetooth().device.value
-    if (device) {
-      settingsStore.printerDevice = device
-      settingsStore.saveSettings()
-    }
+  const device = await scanAndConnect()
+  if (device && !error.value) {
+    settingsStore.printerDevice = device
+    settingsStore.saveSettings()
   }
 }
 
