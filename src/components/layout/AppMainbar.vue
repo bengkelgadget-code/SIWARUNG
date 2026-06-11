@@ -47,6 +47,25 @@ const today = computed(() => {
 
       <!-- Right Side -->
       <div class="flex items-center gap-2 sm:gap-4">
+        <!-- Sync Indicator -->
+        <div class="relative flex items-center gap-1.5 px-3 py-2 bg-neutral-50 rounded-full border border-neutral-100 hidden sm:flex">
+          <div 
+            class="w-2 h-2 rounded-full" 
+            :class="[
+              !isOnline ? 'bg-red-500' : 
+              isSyncing ? 'bg-yellow-500 animate-pulse' : 
+              queueCount > 0 ? 'bg-yellow-500' : 'bg-green-500'
+            ]"
+          ></div>
+          <span class="text-[10px] font-bold text-neutral-500 uppercase tracking-wider">
+            {{ 
+              !isOnline ? 'Offline' : 
+              isSyncing ? 'Syncing...' : 
+              queueCount > 0 ? `${queueCount} Menunggu` : 'Online' 
+            }}
+          </span>
+        </div>
+
         <!-- Cart Badge -->
         <div class="relative">
           <button 
@@ -66,24 +85,7 @@ const today = computed(() => {
           </span>
         </div>
 
-        <!-- Sync Indicator -->
-        <div class="relative flex items-center gap-1.5 px-3 py-2 bg-neutral-50 rounded-full border border-neutral-100 hidden sm:flex">
-          <div 
-            class="w-2 h-2 rounded-full" 
-            :class="[
-              !isOnline ? 'bg-red-500' : 
-              isSyncing ? 'bg-yellow-500 animate-pulse' : 
-              queueCount > 0 ? 'bg-yellow-500' : 'bg-green-500'
-            ]"
-          ></div>
-          <span class="text-[10px] font-bold text-neutral-500 uppercase tracking-wider">
-            {{ 
-              !isOnline ? 'Offline' : 
-              isSyncing ? 'Syncing...' : 
-              queueCount > 0 ? `${queueCount} Menunggu` : 'Online' 
-            }}
-          </span>
-        </div>
+
 
         <!-- Notification -->
         <button class="p-2.5 bg-white rounded-full hover:bg-neutral-50 transition-colors shadow-sm border border-neutral-100 glossy-effect">
