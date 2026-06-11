@@ -9,12 +9,12 @@ defineEmits(['close', 'edit', 'delete'])
 </script>
 
 <template>
-  <div v-if="product" class="fixed inset-0 z-[60] flex items-end sm:items-center justify-center">
+  <div v-if="product" class="fixed inset-0 z-50 flex items-center justify-center p-4">
     <!-- Overlay -->
-    <div class="absolute inset-0 bg-neutral-900/50" @click="$emit('close')"></div>
+    <div class="absolute inset-0 bg-neutral-900/50 backdrop-blur-sm" @click="$emit('close')"></div>
 
     <!-- Modal Content -->
-    <div class="relative bg-white w-full max-w-md sm:rounded-2xl rounded-t-2xl shadow-2xl flex flex-col max-h-[90vh] sm:max-h-[85vh] animate-slide-up">
+    <div class="relative w-full max-w-md bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden max-h-[90vh] modal-content">
       <!-- Handle for mobile swipe down (visual only) -->
       <div class="flex justify-center p-3 sm:hidden" @click="$emit('close')">
         <div class="w-12 h-1.5 bg-neutral-200 rounded-full"></div>

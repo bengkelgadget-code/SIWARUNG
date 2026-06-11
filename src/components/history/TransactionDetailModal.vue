@@ -48,7 +48,7 @@ function formatDate(isoString: string) {
     <div class="absolute inset-0 bg-neutral-900/50 backdrop-blur-sm" @click="$emit('close')"></div>
     
     <!-- Modal Content -->
-    <div class="relative w-full max-w-md bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden max-h-[90vh]">
+    <div class="relative w-full max-w-md bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden max-h-[90vh] modal-content">
       <!-- Header -->
       <div class="flex items-center justify-between p-4 border-b border-neutral-100 shrink-0 bg-neutral-50">
         <div>

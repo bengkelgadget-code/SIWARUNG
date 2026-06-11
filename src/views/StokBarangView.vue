@@ -133,20 +133,24 @@ function onBarcodeScanned(product: Product) {
     />
 
     <!-- Product Detail Modal -->
-    <ProductDetailModal
-      v-if="showDetail"
-      :product="selectedProduct"
-      @close="showDetail = false"
-      @edit="openEditForm"
-      @delete="handleDelete"
-    />
+    <transition name="modal">
+      <ProductDetailModal
+        v-if="showDetail"
+        :product="selectedProduct"
+        @close="showDetail = false"
+        @edit="openEditForm"
+        @delete="handleDelete"
+      />
+    </transition>
 
     <!-- Product Form Modal -->
-    <ProductForm
-      v-if="showForm"
-      :product="editProduct"
-      @save="handleSave"
-      @close="showForm = false"
-    />
+    <transition name="modal">
+      <ProductForm
+        v-if="showForm"
+        :product="editProduct"
+        @save="handleSave"
+        @close="showForm = false"
+      />
+    </transition>
   </div>
 </template>

@@ -65,7 +65,7 @@ function closeAndReset() {
 <template>
   <!-- Overlay -->
   <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden modal-content">
       <!-- Header -->
       <div class="p-6 border-b border-neutral-100">
         <div class="flex items-center justify-between">

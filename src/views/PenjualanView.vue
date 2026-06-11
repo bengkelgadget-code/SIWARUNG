@@ -264,34 +264,38 @@ function getAvailableStock(product: Product) {
     </div>
 
     <!-- Mobile Cart Modal -->
-    <div 
-      v-if="layoutStore.isCartModalOpen"
-      class="fixed inset-0 z-50 flex justify-center items-center p-4 sm:p-6 lg:hidden"
-    >
-      <div class="absolute inset-0 bg-neutral-900/50" @click="layoutStore.closeCartModal()"></div>
-      <div class="relative w-full max-w-lg max-h-[90vh] bg-neutral-50 rounded-2xl shadow-2xl flex flex-col transform transition-all duration-300 overflow-hidden">
-        <!-- Header -->
-        <div class="flex items-center justify-between py-2 px-4 bg-white border-b border-neutral-100 shrink-0 z-10">
-          <h2 class="font-bold text-base text-neutral-800">Keranjang</h2>
-          <button class="p-1.5 hover:bg-neutral-100 rounded-lg text-neutral-500 transition-colors" @click="layoutStore.closeCartModal()">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-        <!-- Content -->
-        <div class="flex-1 overflow-hidden p-2 min-h-0 flex flex-col">
-          <CartPanel @pay="openPayment" class="flex-1 min-h-0" />
+    <transition name="modal">
+      <div 
+        v-if="layoutStore.isCartModalOpen"
+        class="fixed inset-0 z-50 flex justify-center items-center p-4 sm:p-6 lg:hidden"
+      >
+        <div class="absolute inset-0 bg-neutral-900/50 backdrop-blur-sm" @click="layoutStore.closeCartModal()"></div>
+        <div class="relative w-full max-w-lg max-h-[90vh] bg-neutral-50 rounded-2xl shadow-2xl flex flex-col transform transition-all duration-300 overflow-hidden modal-content">
+          <!-- Header -->
+          <div class="flex items-center justify-between py-2 px-4 bg-white border-b border-neutral-100 shrink-0 z-10">
+            <h2 class="font-bold text-base text-neutral-800">Keranjang</h2>
+            <button class="p-1.5 hover:bg-neutral-100 rounded-lg text-neutral-500 transition-colors" @click="layoutStore.closeCartModal()">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+          <!-- Content -->
+          <div class="flex-1 overflow-hidden p-2 min-h-0 flex flex-col">
+            <CartPanel @pay="openPayment" class="flex-1 min-h-0" />
+          </div>
         </div>
       </div>
-    </div>
+    </transition>
 
-    <!-- Payment Modal -->
-    <PaymentModal
-      v-if="showPaymentModal"
-      :total="cartStore.totalPrice"
-      :initial-amount="paymentAmountFromCart"
-      @close="showPaymentModal = false; paymentAmountFromCart = 0"
-    />
+    <!-- Modals -->
+    <transition name="modal">
+      <PaymentModal
+        v-if="showPaymentModal"
+        :total="cartStore.totalPrice"
+        :initial-amount="paymentAmountFromCart"
+        @close="showPaymentModal = false; paymentAmountFromCart = 0"
+      />
+    </transition>
   </div>
 </template>

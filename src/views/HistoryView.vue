@@ -132,11 +132,13 @@ async function handleDeleteTransaction(id: string) {
     </div>
 
     <!-- Detail Modal -->
-    <TransactionDetailModal 
-      v-if="selectedTransaction" 
-      :transaction="selectedTransaction"
-      @close="closeDetail"
-      @delete="handleDeleteTransaction"
-    />
+    <transition name="modal">
+      <TransactionDetailModal 
+        v-if="selectedTransaction" 
+        :transaction="selectedTransaction"
+        @close="closeDetail"
+        @delete="handleDeleteTransaction"
+      />
+    </transition>
   </div>
 </template>

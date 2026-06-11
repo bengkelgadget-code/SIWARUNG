@@ -48,7 +48,7 @@ onMounted(() => {
       <AppMainbar />
       <main class="flex-1 overflow-y-auto p-4 lg:p-6">
         <router-view v-slot="{ Component }">
-          <transition name="fade" mode="out-in">
+          <transition name="page" mode="out-in">
             <component :is="Component" />
           </transition>
         </router-view>
@@ -56,15 +56,3 @@ onMounted(() => {
     </div>
   </div>
 </template>
-
-<style>
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.2s ease;
-}
-
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-}
-</style>
