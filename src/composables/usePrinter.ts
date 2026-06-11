@@ -72,23 +72,31 @@ export function usePrinter() {
 
       if (Capacitor.isNativePlatform()) {
         // Native Android BLE
+        const { useSettingsStore } = await import('@/stores/settings')
+        const settingsStore = useSettingsStore()
+        
+        if (!settingsStore.printerDevice?.id) {
+          throw new Error('Printer belum dikonfigurasi di Pengaturan.')
+        }
+        
         await BleClient.initialize()
-        const device = await BleClient.requestDevice({
-          optionalServices: ['000018f0-0000-1000-8000-00805f9b34fb']
-        })
-        await BleClient.connect(device.deviceId)
+        const deviceId = settingsStore.printerDevice.id
+        
+        await BleClient.connect(deviceId)
 
         for (let i = 0; i < data.length; i += chunkSize) {
           const chunk = data.slice(i, i + chunkSize)
           const dataView = new DataView(chunk.buffer, chunk.byteOffset, chunk.byteLength)
           await BleClient.write(
-            device.deviceId,
+            deviceId,
             '000018f0-0000-1000-8000-00805f9b34fb',
             '00002af1-0000-1000-8000-00805f9b34fb',
             dataView
           )
         }
-        await BleClient.disconnect(device.deviceId)
+        // Tunggu sedikit agar buffer selesai
+        await new Promise(resolve => setTimeout(resolve, 500))
+        await BleClient.disconnect(deviceId)
       } else {
         // Web Bluetooth
         if (!('bluetooth' in navigator)) {
