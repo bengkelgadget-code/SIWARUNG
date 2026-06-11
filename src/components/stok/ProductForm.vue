@@ -265,9 +265,14 @@ function cancelScan() {
   stopScanner()
 }
 
+const isSubmitting = ref(false)
+
 // ─── Submit ───
 function handleSubmit() {
+  if (isSubmitting.value) return
+  isSubmitting.value = true
   emit('save', { ...form.value })
+  // parent will unmount this component, so isSubmitting will reset on next open
 }
 </script>
 
@@ -487,8 +492,8 @@ function handleSubmit() {
           <!-- Actions -->
           <div class="flex gap-2.5 pt-1">
             <button type="button" class="btn-secondary flex-1 text-sm py-2" @click="emit('close')">Batal</button>
-            <button type="submit" class="btn-primary flex-1 text-sm py-2">
-              {{ product ? 'Simpan Perubahan' : 'Tambah Produk' }}
+            <button type="submit" class="btn-primary flex-1 text-sm py-2" :disabled="isSubmitting">
+              {{ isSubmitting ? 'Menyimpan...' : (product ? 'Simpan Perubahan' : 'Tambah Produk') }}
             </button>
           </div>
         </form>

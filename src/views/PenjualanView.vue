@@ -113,7 +113,7 @@ function getAvailableStock(product: Product) {
 </script>
 
 <template>
-  <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 h-[calc(100vh-7rem)]">
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 h-full">
 
     <!-- ═══ LEFT: Product Catalog Card ═══ -->
     <div class="lg:col-span-2 card flex flex-col overflow-hidden !p-0">

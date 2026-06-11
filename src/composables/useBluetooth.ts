@@ -1,15 +1,17 @@
 import { ref } from 'vue'
+import { Capacitor } from '@capacitor/core'
+import { BleClient } from '@capacitor-community/bluetooth-le'
 import type { BluetoothDevice } from '@/types'
 
 export function useBluetooth() {
-  const isSupported = ref('bluetooth' in navigator)
+  const isSupported = ref(Capacitor.isNativePlatform() || 'bluetooth' in navigator)
   const device = ref<BluetoothDevice | null>(null)
   const connecting = ref(false)
   const error = ref<string>('')
 
   async function scanAndConnect(): Promise<BluetoothDevice | null> {
     if (!isSupported.value) {
-      error.value = 'Web Bluetooth API tidak didukung di browser ini. Gunakan Chrome/Edge.'
+      error.value = 'Bluetooth tidak didukung di perangkat ini.'
       return null
     }
 
@@ -17,24 +19,35 @@ export function useBluetooth() {
     error.value = ''
 
     try {
-      const btDevice = await (navigator as any).bluetooth.requestDevice({
-        acceptAllDevices: true,
-        optionalServices: [
-          '000018f0-0000-1000-8000-00805f9b34fb', // Generic printer service
-        ],
-      })
+      if (Capacitor.isNativePlatform()) {
+        await BleClient.initialize()
+        const btDevice = await BleClient.requestDevice({
+          optionalServices: ['000018f0-0000-1000-8000-00805f9b34fb']
+        })
 
-      device.value = {
-        id: btDevice.id,
-        name: btDevice.name || 'Unknown Device',
-        connected: true,
-      }
-
-      btDevice.addEventListener('gattserverdisconnected', () => {
-        if (device.value) {
-          device.value.connected = false
+        device.value = {
+          id: btDevice.deviceId,
+          name: btDevice.name || 'Printer Bluetooth',
+          connected: true,
         }
-      })
+      } else {
+        const btDevice = await (navigator as any).bluetooth.requestDevice({
+          acceptAllDevices: true,
+          optionalServices: ['000018f0-0000-1000-8000-00805f9b34fb'],
+        })
+
+        device.value = {
+          id: btDevice.id,
+          name: btDevice.name || 'Printer Bluetooth',
+          connected: true,
+        }
+
+        btDevice.addEventListener('gattserverdisconnected', () => {
+          if (device.value) {
+            device.value.connected = false
+          }
+        })
+      }
 
       return device.value
     } catch (err: any) {
