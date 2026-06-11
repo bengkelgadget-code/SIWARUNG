@@ -24,7 +24,7 @@ const today = computed(() => {
 </script>
 
 <template>
-  <header class="bg-white border-b border-neutral-100 px-4 lg:px-6 py-4 shadow-sm">
+  <header class="bg-[#e0e5ec] px-4 lg:px-6 py-4 rounded-b-3xl shadow-[0_10px_20px_rgba(0,0,0,0.05)] z-30 relative border-b border-white/50">
     <div class="flex items-center justify-between">
       <!-- Left Side -->
       <div class="flex items-center gap-3">
@@ -48,7 +48,10 @@ const today = computed(() => {
       <!-- Right Side -->
       <div class="flex items-center gap-2 sm:gap-4">
         <!-- Sync Indicator -->
-        <div class="relative flex items-center gap-1.5 px-3 py-2 bg-neutral-50 rounded-full border border-neutral-100 hidden sm:flex">
+        <div 
+          class="w-4 h-4 rounded-full neumorphic flex items-center justify-center transition-all"
+          title="Status Sinkronisasi"
+        >
           <div 
             class="w-2 h-2 rounded-full" 
             :class="[
@@ -57,22 +60,15 @@ const today = computed(() => {
               queueCount > 0 ? 'bg-yellow-500' : 'bg-green-500'
             ]"
           ></div>
-          <span class="text-[10px] font-bold text-neutral-500 uppercase tracking-wider">
-            {{ 
-              !isOnline ? 'Offline' : 
-              isSyncing ? 'Syncing...' : 
-              queueCount > 0 ? `${queueCount} Menunggu` : 'Online' 
-            }}
-          </span>
         </div>
 
         <!-- Cart Badge -->
         <div class="relative">
           <button 
-            class="p-2.5 bg-white rounded-full hover:bg-neutral-50 transition-colors shadow-sm border border-neutral-100 glossy-effect"
+            class="p-2.5 rounded-full text-neutral-600 transition-all neumorphic hover:neumorphic-inset"
             @click="layoutStore.toggleCartModal()"
           >
-            <svg class="w-5 h-5 text-neutral-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                 d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z" />
             </svg>
@@ -88,8 +84,8 @@ const today = computed(() => {
 
 
         <!-- Notification -->
-        <button class="p-2.5 bg-white rounded-full hover:bg-neutral-50 transition-colors shadow-sm border border-neutral-100 glossy-effect">
-          <svg class="w-5 h-5 text-neutral-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <button class="p-2.5 rounded-full text-neutral-600 transition-all neumorphic hover:neumorphic-inset">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
           </svg>

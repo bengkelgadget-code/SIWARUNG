@@ -36,7 +36,8 @@
   }
 
   .card {
-    @apply bg-white rounded-2xl shadow-md border-2 border-neutral-100 p-6;
+    @apply bg-[#e0e5ec] rounded-2xl p-6 border border-white/50;
+    box-shadow: 6px 6px 12px #c5c5c5, -6px -6px 12px #ffffff;
   }
 
   .input-field {
@@ -53,6 +54,17 @@
 }
 
 @layer utilities {
+  .neumorphic {
+    background-color: #e0e5ec;
+    box-shadow: 6px 6px 12px #c5c5c5, -6px -6px 12px #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+  }
+  
+  .neumorphic-inset {
+    background-color: #e0e5ec;
+    box-shadow: inset 4px 4px 8px #c5c5c5, inset -4px -4px 8px #ffffff;
+  }
+
   .glossy-effect {
     background-image: linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0) 40%, rgba(0,0,0,0.05) 100%);
     box-shadow: inset 0 2px 3px rgba(255,255,255,0.5), inset 0 -2px 3px rgba(0,0,0,0.15), 0 4px 6px -1px rgba(0,0,0,0.1);
