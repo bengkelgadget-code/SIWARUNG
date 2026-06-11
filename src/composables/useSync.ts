@@ -1,0 +1,111 @@
+import { ref, onMounted, onUnmounted } from 'vue'
+import { localDb } from '@/lib/localDb'
+import { supabase } from '@/lib/supabase'
+import { productApi } from '@/api'
+
+const isSyncing = ref(false)
+const syncError = ref<string | null>(null)
+const queueCount = ref(0)
+const isOnline = ref(navigator.onLine)
+
+export function useSync() {
+  async function updateQueueCount() {
+    const queue = await localDb.getQueue()
+    queueCount.value = queue.length
+  }
+
+  async function processQueue() {
+    if (!isOnline.value || isSyncing.value) return
+    
+    const queue = await localDb.getQueue()
+    if (queue.length === 0) return
+
+    isSyncing.value = true
+    syncError.value = null
+
+    try {
+      for (const item of queue) {
+        try {
+          if (item.type === 'ADD_TRANSACTION') {
+            const trx = item.payload
+            
+            // Format for supabase
+            const transactionData = {
+              id: trx.id,
+              items: trx.items,
+              total: trx.total,
+              payment: trx.payment,
+              change: trx.change,
+              createdAt: trx.createdAt
+            }
+
+            // 1. Insert to supabase
+            const { error: insertError } = await supabase.from('transactions').insert([transactionData])
+            if (insertError) throw insertError
+
+            // 2. Reduce stock online
+            for (const cartItem of trx.items) {
+              await productApi.updateStock(cartItem.product.id, -cartItem.quantity)
+            }
+          } 
+          else if (item.type === 'DELETE_TRANSACTION') {
+            const { id, items } = item.payload
+            const { error } = await supabase.from('transactions').delete().eq('id', id)
+            if (error) throw error
+            
+            // Restore stock online
+            for (const cartItem of items) {
+              await productApi.updateStock(cartItem.product.id, cartItem.quantity)
+            }
+          }
+          // Note: We can add ADD_PRODUCT, UPDATE_PRODUCT, DELETE_PRODUCT if needed later.
+          // For now, product management assumes online or simple offline cache update.
+
+          // Success, remove from queue
+          await localDb.removeFromQueue(item.id)
+        } catch (itemError: any) {
+          console.error(`Failed to sync item ${item.id}:`, itemError)
+          // If it fails, we keep it in the queue for the next sync attempt
+          // Or if it's a critical error (like duplicate), we might need to handle it.
+        }
+      }
+    } catch (e: any) {
+      syncError.value = e.message
+    } finally {
+      isSyncing.value = false
+      await updateQueueCount()
+    }
+  }
+
+  function handleOnline() {
+    isOnline.value = true
+    processQueue()
+  }
+
+  function handleOffline() {
+    isOnline.value = false
+  }
+
+  onMounted(() => {
+    window.addEventListener('online', handleOnline)
+    window.addEventListener('offline', handleOffline)
+    updateQueueCount()
+    
+    // Periodically check queue
+    setInterval(processQueue, 15000) // every 15s
+  })
+
+  onUnmounted(() => {
+    window.removeEventListener('online', handleOnline)
+    window.removeEventListener('offline', handleOffline)
+  })
+
+  return {
+    isSyncing,
+    syncError,
+    queueCount,
+    isOnline,
+    processQueue,
+    updateQueueCount
+  }
+}

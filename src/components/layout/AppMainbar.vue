@@ -3,10 +3,12 @@ import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { useCartStore } from '@/stores/cart'
 import { useLayoutStore } from '@/stores/layout'
+import { useSync } from '@/composables/useSync'
 
 const route = useRoute()
 const cartStore = useCartStore()
 const layoutStore = useLayoutStore()
+const { isOnline, isSyncing, queueCount } = useSync()
 
 const pageTitle = computed(() => (route.meta.title as string) || 'Dashboard')
 
@@ -61,6 +63,25 @@ const today = computed(() => {
             class="absolute -top-1 -right-1 w-5 h-5 bg-primary-500 text-white text-xs rounded-full flex items-center justify-center font-bold"
           >
             {{ cartStore.totalItems }}
+          </span>
+        </div>
+
+        <!-- Sync Indicator -->
+        <div class="relative flex items-center gap-1.5 px-3 py-2 bg-neutral-50 rounded-full border border-neutral-100 hidden sm:flex">
+          <div 
+            class="w-2 h-2 rounded-full" 
+            :class="[
+              !isOnline ? 'bg-red-500' : 
+              isSyncing ? 'bg-yellow-500 animate-pulse' : 
+              queueCount > 0 ? 'bg-yellow-500' : 'bg-green-500'
+            ]"
+          ></div>
+          <span class="text-[10px] font-bold text-neutral-500 uppercase tracking-wider">
+            {{ 
+              !isOnline ? 'Offline' : 
+              isSyncing ? 'Syncing...' : 
+              queueCount > 0 ? `${queueCount} Menunggu` : 'Online' 
+            }}
           </span>
         </div>
 

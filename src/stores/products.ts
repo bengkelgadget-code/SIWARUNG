@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { Product } from '@/types'
 import { productApi } from '@/api'
+import { localDb } from '@/lib/localDb'
 
 export const useProductStore = defineStore('products', () => {
   const products = ref<Product[]>([])
@@ -18,73 +19,103 @@ export const useProductStore = defineStore('products', () => {
     loading.value = true
     error.value = null
     try {
-      const { data } = await productApi.getAll()
-      products.value = data
+      // 1. Load from local DB first for instant UI
+      const localData = await localDb.getProducts()
+      if (localData && localData.length > 0) {
+        products.value = localData
+      }
+
+      // 2. Fetch fresh from Supabase if online
+      if (navigator.onLine) {
+        const { data } = await productApi.getAll()
+        products.value = data
+        await localDb.setProducts(data)
+      }
     } catch (err: any) {
       error.value = err.message || 'Gagal memuat produk'
-      // Fallback to local storage
-      const stored = localStorage.getItem('products')
-      if (stored) products.value = JSON.parse(stored)
+      console.error('Failed to fetch from supabase', err)
     } finally {
       loading.value = false
     }
   }
 
   async function fetchByBarcode(barcode: string): Promise<Product | null> {
-    try {
-      const { data } = await productApi.getByBarcode(barcode)
-      return data
-    } catch {
-      // Fallback: search local
-      return products.value.find((p) => p.barcode === barcode) || null
-    }
+    // Search local first, should be up to date
+    return products.value.find((p) => p.barcode === barcode) || null
   }
 
   async function addProduct(product: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>) {
     try {
-      const { data } = await productApi.create(product)
-      products.value.push(data)
-      return data
+      if (navigator.onLine) {
+        const { data } = await productApi.create(product)
+        products.value.push(data)
+        await localDb.setProducts(products.value)
+        return data
+      } else {
+        throw new Error('Offline')
+      }
     } catch {
-      // Fallback: add locally
+      // Offline fallback
       const newProduct: Product = {
         ...product,
-        id: Date.now().toString(),
+        id: `NEW-${Date.now()}`,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       }
       products.value.push(newProduct)
-      saveToLocal()
+      await localDb.setProducts(products.value)
+      // Note: Full offline-first sync for products usually requires pushing to queue.
+      // For now, this is a basic fallback.
+      alert('Produk ditambahkan secara lokal (Offline mode).')
       return newProduct
     }
   }
 
   async function updateProduct(id: string, updates: Partial<Product>) {
     try {
-      const { data } = await productApi.update(id, updates)
-      const index = products.value.findIndex((p) => p.id === id)
-      if (index !== -1) products.value[index] = data
+      if (navigator.onLine) {
+        const { data } = await productApi.update(id, updates)
+        const index = products.value.findIndex((p) => p.id === id)
+        if (index !== -1) {
+          products.value[index] = data
+          await localDb.setProducts(products.value)
+        }
+      } else {
+        throw new Error('Offline')
+      }
     } catch {
       const index = products.value.findIndex((p) => p.id === id)
       if (index !== -1) {
         products.value[index] = { ...products.value[index], ...updates, updatedAt: new Date().toISOString() }
-        saveToLocal()
+        await localDb.setProducts(products.value)
+        alert('Produk diperbarui secara lokal (Offline mode).')
       }
     }
   }
 
   async function deleteProduct(id: string) {
     try {
-      await productApi.delete(id)
-      products.value = products.value.filter((p) => p.id !== id)
+      if (navigator.onLine) {
+        await productApi.delete(id)
+        products.value = products.value.filter((p) => p.id !== id)
+        await localDb.setProducts(products.value)
+      } else {
+        throw new Error('Offline')
+      }
     } catch {
       products.value = products.value.filter((p) => p.id !== id)
-      saveToLocal()
+      await localDb.setProducts(products.value)
+      alert('Produk dihapus secara lokal (Offline mode).')
     }
   }
 
-  function saveToLocal() {
-    localStorage.setItem('products', JSON.stringify(products.value))
+  // Fast UI helper for cart
+  function updateLocalStock(id: string, delta: number) {
+    const p = products.value.find(p => p.id === id)
+    if (p) {
+      p.stock = Math.max(0, p.stock + delta)
+      localDb.setProducts(products.value).catch(console.error)
+    }
   }
 
   return {
@@ -98,5 +129,6 @@ export const useProductStore = defineStore('products', () => {
     addProduct,
     updateProduct,
     deleteProduct,
+    updateLocalStock,
   }
 })
