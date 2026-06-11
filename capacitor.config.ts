@@ -4,9 +4,6 @@ const config: CapacitorConfig = {
   appId: 'com.siwarung.app',
   appName: 'SIWARUNG',
   webDir: 'dist',
-  server: {
-    allowNavigation: ['*']
-  },
   android: {
     allowMixedContent: true
   }

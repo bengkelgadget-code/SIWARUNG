@@ -4,6 +4,8 @@ import { useSettingsStore } from '@/stores/settings'
 import { usePrinter } from '@/composables/usePrinter'
 import type { Transaction } from '@/types'
 
+import { useDialog } from '@/composables/useDialog'
+
 const props = defineProps<{
   transaction: Transaction
 }>()
@@ -15,6 +17,7 @@ const emit = defineEmits<{
 
 const settingsStore = useSettingsStore()
 const { isPrinting, error: printError, printReceipt } = usePrinter()
+const dialog = useDialog()
 
 async function handlePrint() {
   await printReceipt(
@@ -24,8 +27,9 @@ async function handlePrint() {
   )
 }
 
-function handleDelete() {
-  if (confirm('Apakah Anda yakin ingin menghapus transaksi ini? Stok barang akan dikembalikan.')) {
+async function handleDelete() {
+  const confirmed = await dialog.confirm('Apakah Anda yakin ingin menghapus transaksi ini? Stok barang akan dikembalikan.')
+  if (confirmed) {
     emit('delete', props.transaction.id)
   }
 }

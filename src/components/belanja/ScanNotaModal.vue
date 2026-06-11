@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { geminiApi } from '@/lib/gemini'
 import { usePurchaseStore } from '@/stores/purchases'
 import { useProductStore } from '@/stores/products'
+import { useSnackbar } from '@/composables/useSnackbar'
 import type { PurchaseItem, AIInvoiceResult } from '@/types'
 
 const emit = defineEmits<{
@@ -11,6 +12,7 @@ const emit = defineEmits<{
 
 const purchaseStore = usePurchaseStore()
 const productStore = useProductStore()
+const { error: showError } = useSnackbar()
 
 const step = ref<'upload' | 'processing' | 'review'>('upload')
 const extractedData = ref<AIInvoiceResult | null>(null)
@@ -28,7 +30,7 @@ async function handleFileSelected(event: Event) {
   reader.onload = async (e) => {
     const base64Image = e.target?.result as string
     if (!base64Image) {
-      alert('Gagal membaca file gambar.')
+      showError('Gagal membaca file gambar.')
       step.value = 'upload'
       return
     }
@@ -56,7 +58,7 @@ async function handleFileSelected(event: Event) {
       step.value = 'review'
     } catch (e: any) {
       const errorMsg = e.message || 'Gagal memproses nota'
-      alert(errorMsg)
+      showError(errorMsg)
       step.value = 'upload'
     }
   }

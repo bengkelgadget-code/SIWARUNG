@@ -74,6 +74,10 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   stopAllScanners()
+  if (cropperInstance) {
+    cropperInstance.destroy()
+    cropperInstance = null
+  }
 })
 
 function stopAllScanners() {

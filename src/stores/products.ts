@@ -3,8 +3,10 @@ import { ref, computed } from 'vue'
 import type { Product } from '@/types'
 import { productApi } from '@/api'
 import { localDb } from '@/lib/localDb'
+import { useSnackbar } from '@/composables/useSnackbar'
 
 export const useProductStore = defineStore('products', () => {
+  const { success, error: showError } = useSnackbar()
   const products = ref<Product[]>([])
   const loading = ref(false)
   const error = ref<string | null>(null)
@@ -54,20 +56,25 @@ export const useProductStore = defineStore('products', () => {
       } else {
         throw new Error('Offline')
       }
-    } catch {
-      // Offline fallback
-      const newProduct: Product = {
-        ...product,
-        id: `NEW-${Date.now()}`,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+    } catch (err: any) {
+      const msg = err.message || ''
+      if (msg === 'Offline' || msg.includes('Failed to fetch') || !navigator.onLine) {
+        // Offline fallback
+        const newProduct: Product = {
+          ...product,
+          id: `NEW-${Date.now()}`,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        }
+        products.value.push(newProduct)
+        await localDb.setProducts(products.value)
+        success('Produk ditambahkan secara lokal (Offline mode).')
+        return newProduct
+      } else {
+        // Real server error
+        showError('Gagal menambah produk: ' + msg)
+        throw err
       }
-      products.value.push(newProduct)
-      await localDb.setProducts(products.value)
-      // Note: Full offline-first sync for products usually requires pushing to queue.
-      // For now, this is a basic fallback.
-      alert('Produk ditambahkan secara lokal (Offline mode).')
-      return newProduct
     }
   }
 
@@ -83,12 +90,18 @@ export const useProductStore = defineStore('products', () => {
       } else {
         throw new Error('Offline')
       }
-    } catch {
-      const index = products.value.findIndex((p) => p.id === id)
-      if (index !== -1) {
-        products.value[index] = { ...products.value[index], ...updates, updatedAt: new Date().toISOString() }
-        await localDb.setProducts(products.value)
-        alert('Produk diperbarui secara lokal (Offline mode).')
+    } catch (err: any) {
+      const msg = err.message || ''
+      if (msg === 'Offline' || msg.includes('Failed to fetch') || !navigator.onLine) {
+        const index = products.value.findIndex((p) => p.id === id)
+        if (index !== -1) {
+          products.value[index] = { ...products.value[index], ...updates, updatedAt: new Date().toISOString() }
+          await localDb.setProducts(products.value)
+          success('Produk diperbarui secara lokal (Offline mode).')
+        }
+      } else {
+        showError('Gagal memperbarui produk: ' + msg)
+        throw err
       }
     }
   }
@@ -102,10 +115,16 @@ export const useProductStore = defineStore('products', () => {
       } else {
         throw new Error('Offline')
       }
-    } catch {
-      products.value = products.value.filter((p) => p.id !== id)
-      await localDb.setProducts(products.value)
-      alert('Produk dihapus secara lokal (Offline mode).')
+    } catch (err: any) {
+      const msg = err.message || ''
+      if (msg === 'Offline' || msg.includes('Failed to fetch') || !navigator.onLine) {
+        products.value = products.value.filter((p) => p.id !== id)
+        await localDb.setProducts(products.value)
+        success('Produk dihapus secara lokal (Offline mode).')
+      } else {
+        showError('Gagal menghapus produk: ' + msg)
+        throw err
+      }
     }
   }
 

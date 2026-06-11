@@ -1,16 +1,7 @@
-import axios from 'axios'
 import type { Product } from '@/types'
 import { supabase } from '@/lib/supabase'
 
-const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || '/api',
-  headers: {
-    'Content-Type': 'application/json',
-  },
-})
-
-// Product API via Supabase
-const handleSupabase = async (request: Promise<{ data: any; error: any }>) => {
+const handleSupabase = async <T>(request: Promise<{ data: T | null; error: any }>) => {
   const { data, error } = await request
   if (error) throw new Error(error.message)
   return { data }
@@ -36,9 +27,7 @@ export const productApi = {
   updateStock: async (id: string, quantity: number) => {
     // Get current stock
     const { data: current } = await supabase.from('products').select('stock').eq('id', id).single()
-    const newStock = (current?.stock || 0) + quantity
+    const newStock = Math.max(0, (current?.stock || 0) + quantity)
     return handleSupabase(supabase.from('products').update({ stock: newStock }).eq('id', id).select().single())
   },
 }
-
-export default api

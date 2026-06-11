@@ -5,8 +5,10 @@ import { supabase } from '@/lib/supabase'
 import { productApi } from '@/api'
 import { localDb } from '@/lib/localDb'
 import { useProductStore } from './products'
+import { useSnackbar } from '@/composables/useSnackbar'
 
 export const useCartStore = defineStore('cart', () => {
+  const { error: showError } = useSnackbar()
   const items = ref<CartItem[]>([])
   const transactions = ref<Transaction[]>([])
 
@@ -49,10 +51,10 @@ export const useCartStore = defineStore('cart', () => {
   }
 
   async function checkout(payment: number): Promise<Transaction> {
-    const transactionId = `TRX-${Date.now()}`
+    const transactionId = `TRX-${Date.now()}-${Math.floor(Math.random()*1000)}`
     const transactionData = {
       id: transactionId,
-      items: items.value,
+      items: JSON.parse(JSON.stringify(items.value)),
       total: totalPrice.value,
       payment,
       change: payment - totalPrice.value,
@@ -81,7 +83,7 @@ export const useCartStore = defineStore('cart', () => {
       return newTransaction
     } catch (e: any) {
       console.error('Checkout failed', e)
-      alert('Gagal memproses transaksi (Lokal): ' + e.message)
+      showError('Gagal memproses transaksi (Lokal): ' + e.message)
       throw e
     }
   }
@@ -126,7 +128,7 @@ export const useCartStore = defineStore('cart', () => {
       }
     } catch (e: any) {
       console.error('Failed to delete transaction locally', e)
-      alert('Gagal menghapus transaksi (Lokal): ' + e.message)
+      showError('Gagal menghapus transaksi (Lokal): ' + e.message)
       throw e
     }
   }

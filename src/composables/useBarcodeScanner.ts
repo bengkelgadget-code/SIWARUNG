@@ -32,7 +32,14 @@ export function useBarcodeScanner() {
 
       isScanning.value = true
     } catch (err: any) {
-      error.value = err.message || 'Gagal memulai scanner'
+      console.error('Scanner error:', err)
+      if (err.name === 'NotAllowedError' || err.message?.toLowerCase().includes('permission')) {
+        error.value = 'Izin kamera ditolak. Mohon izinkan akses kamera di pengaturan perangkat Anda.'
+      } else if (err.name === 'NotFoundError' || err.message?.toLowerCase().includes('device not found')) {
+        error.value = 'Kamera tidak ditemukan pada perangkat ini.'
+      } else {
+        error.value = err.message || 'Gagal memulai scanner'
+      }
       isScanning.value = false
     }
   }

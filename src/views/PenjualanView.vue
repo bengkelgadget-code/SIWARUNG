@@ -7,6 +7,7 @@ import { useProductStore } from '@/stores/products'
 import { useLayoutStore } from '@/stores/layout'
 import { useSettingsStore } from '@/stores/settings'
 import { usePrinter } from '@/composables/usePrinter'
+import { useSnackbar } from '@/composables/useSnackbar'
 import { geminiApi } from '@/lib/gemini'
 import type { Product } from '@/types'
 
@@ -15,8 +16,10 @@ const productStore = useProductStore()
 const layoutStore = useLayoutStore()
 const settingsStore = useSettingsStore()
 const { printReceipt } = usePrinter()
+const { success, error: showError } = useSnackbar()
 
-const searchQuery = ref('')
+import { useDebouncedRef } from '@/composables/useDebouncedRef'
+const searchQuery = useDebouncedRef('')
 const searchResults = ref<Product[]>([])
 const isSearching = ref(false)
 const showScanner = ref(false)
@@ -109,14 +112,14 @@ async function openPayment(amount: number) {
       await printReceipt(transaction, settingsStore.storeName, settingsStore.storeAddress)
     }
     
-    alert(`Transaksi Berhasil!\nKembalian: Rp ${transaction.change.toLocaleString('id-ID')}`)
+    success(`Transaksi Berhasil! Kembalian: Rp ${transaction.change.toLocaleString('id-ID')}`, 5000)
     
     // Tutup modal mobile jika terbuka
     if (layoutStore.isCartModalOpen) {
       layoutStore.closeCartModal()
     }
   } catch (err: any) {
-    alert('Gagal memproses transaksi:\n' + err.message)
+    showError('Gagal memproses transaksi: ' + err.message)
   }
 }
 

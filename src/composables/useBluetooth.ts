@@ -58,8 +58,17 @@ export function useBluetooth() {
     }
   }
 
-  function disconnect() {
-    device.value = null
+  async function disconnect() {
+    if (device.value) {
+      if (Capacitor.isNativePlatform()) {
+        try {
+          await BleClient.disconnect(device.value.id)
+        } catch(e) {
+          console.error('Failed to disconnect BleClient', e)
+        }
+      }
+      device.value = null
+    }
   }
 
   return {

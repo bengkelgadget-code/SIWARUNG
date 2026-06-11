@@ -7,12 +7,16 @@ import ProductDetailModal from '@/components/stok/ProductDetailModal.vue'
 import BarcodeScanner from '@/components/penjualan/BarcodeScanner.vue'
 import type { Product } from '@/types'
 
+import { useDialog } from '@/composables/useDialog'
+
 const productStore = useProductStore()
+const dialog = useDialog()
 const showForm = ref(false)
 const showDetail = ref(false)
 const editProduct = ref<Product | null>(null)
 const selectedProduct = ref<Product | null>(null)
-const searchQuery = ref('')
+import { useDebouncedRef } from '@/composables/useDebouncedRef'
+const searchQuery = useDebouncedRef('')
 const showScanner = ref(false)
 
 const filteredProducts = computed(() => {
@@ -51,8 +55,9 @@ function handleSave(formData: any) {
   editProduct.value = null
 }
 
-function handleDelete(product: Product) {
-  if (confirm(`Hapus "${product.name}"?`)) {
+async function handleDelete(product: Product) {
+  const confirmed = await dialog.confirm(`Hapus "${product.name}"?`)
+  if (confirmed) {
     productStore.deleteProduct(product.id)
   }
 }

@@ -8,6 +8,8 @@ const syncError = ref<string | null>(null)
 const queueCount = ref(0)
 const isOnline = ref(navigator.onLine)
 
+let isInitialized = false
+
 export function useSync() {
   async function updateQueueCount() {
     const queue = await localDb.getQueue()
@@ -77,8 +79,6 @@ export function useSync() {
           await localDb.removeFromQueue(item.id)
         } catch (itemError: any) {
           console.error(`Failed to sync item ${item.id}:`, itemError)
-          // Jika terjadi error dari API supabase yang bersifat permanen (misal RLS / invalid input),
-          // kita keluarkan dari antrean agar tidak memblokir item lainnya.
           if (itemError?.code && ['42501', '23502', '23503', '42P01'].includes(itemError.code)) {
             console.error('Permanent error detected, removing from queue:', itemError.message)
             await localDb.removeFromQueue(item.id)
@@ -102,19 +102,13 @@ export function useSync() {
     isOnline.value = false
   }
 
-  onMounted(() => {
+  if (!isInitialized && typeof window !== 'undefined') {
     window.addEventListener('online', handleOnline)
     window.addEventListener('offline', handleOffline)
-    updateQueueCount()
-    
-    // Periodically check queue
     setInterval(processQueue, 15000) // every 15s
-  })
-
-  onUnmounted(() => {
-    window.removeEventListener('online', handleOnline)
-    window.removeEventListener('offline', handleOffline)
-  })
+    updateQueueCount()
+    isInitialized = true
+  }
 
   return {
     isSyncing,

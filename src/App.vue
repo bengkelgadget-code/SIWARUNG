@@ -3,6 +3,8 @@ import { onMounted } from 'vue'
 import AppSidebar from '@/components/layout/AppSidebar.vue'
 import AppMainbar from '@/components/layout/AppMainbar.vue'
 import AppBottomNav from '@/components/layout/AppBottomNav.vue'
+import AppSnackbar from '@/components/ui/AppSnackbar.vue'
+import AppDialog from '@/components/ui/AppDialog.vue'
 import { useSettingsStore } from '@/stores/settings'
 import { useProductStore } from '@/stores/products'
 import { useLayoutStore } from '@/stores/layout'
@@ -48,5 +50,9 @@ onMounted(() => {
       <!-- Bottom Nav (Mobile Only) -->
       <AppBottomNav />
     </div>
+
+    <!-- Global Snackbar & Dialog -->
+    <AppSnackbar />
+    <AppDialog />
   </div>
 </template>

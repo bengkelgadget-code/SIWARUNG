@@ -4,6 +4,7 @@ import type { PurchaseRecord, PurchaseItem } from '@/types'
 import { useProductStore } from './products'
 import { supabase } from '@/lib/supabase'
 import { productApi } from '@/api'
+import { useSnackbar } from '@/composables/useSnackbar'
 
 export const usePurchaseStore = defineStore('purchases', () => {
   const productStore = useProductStore()
@@ -26,13 +27,16 @@ export const usePurchaseStore = defineStore('purchases', () => {
       for (const item of items) {
         if (item.productId) {
           await productApi.updateStock(item.productId, item.quantity)
+          productStore.updateLocalStock(item.productId, item.quantity)
         }
       }
 
       purchases.value.unshift({ ...newPurchase, createdAt: new Date().toISOString() })
     } catch (e: any) {
-      console.error('Failed to add purchase', e)
-      alert('Gagal menyimpan riwayat nota: ' + e.message)
+      console.error('Failed to save purchase history', e)
+      const { error: showError } = useSnackbar()
+      showError('Gagal menyimpan riwayat nota: ' + e.message)
+      throw e
     }
   }
 
