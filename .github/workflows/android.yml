@@ -30,6 +30,9 @@ jobs:
     - name: Build Web App
       run: npm run build
 
+    - name: Clean Old Assets
+      run: rm -rf android/app/src/main/assets/public
+
     - name: Sync Capacitor
       run: npx cap sync android
 
