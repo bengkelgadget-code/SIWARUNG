@@ -30,7 +30,7 @@ function formatDate(dateStr: string) {
 </script>
 
 <template>
-  <div class="h-full flex flex-col gap-4">
+  <div class="flex flex-col h-[calc(100vh-7rem)] lg:h-[calc(100vh-6rem)] gap-4 -mt-2">
     <!-- Header Action -->
     <div class="card shrink-0 bg-gradient-to-r from-primary-500 to-primary-600 text-white p-6">
       <div class="flex flex-col md:flex-row justify-between items-center gap-4">

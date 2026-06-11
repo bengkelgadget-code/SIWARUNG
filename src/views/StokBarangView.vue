@@ -64,10 +64,10 @@ function onBarcodeScanned(product: Product) {
 </script>
 
 <template>
-  <div class="space-y-4 -mt-2">
+  <div class="flex flex-col h-[calc(100vh-7rem)] lg:h-[calc(100vh-6rem)] -mt-2">
 
     <!-- Toolbar -->
-    <div class="card px-4 py-3 flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between shadow-sm">
+    <div class="card shrink-0 px-4 py-3 flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between shadow-sm mb-4">
       <div class="flex-1 w-full max-w-md flex items-center gap-2">
         <div class="relative flex-1">
           <div class="absolute left-3 top-1/2 -translate-y-1/2">
@@ -117,7 +117,7 @@ function onBarcodeScanned(product: Product) {
     </div>
 
     <!-- Scanner Panel -->
-    <div v-if="showScanner" class="card p-3 shadow-sm">
+    <div v-if="showScanner" class="card shrink-0 p-3 shadow-sm mb-4">
       <BarcodeScanner
         @scanned="onBarcodeScanned"
         @close="showScanner = false"
@@ -125,12 +125,14 @@ function onBarcodeScanned(product: Product) {
     </div>
 
     <!-- Product Table -->
-    <ProductTable
-      :products="filteredProducts"
-      @edit="openEditForm"
-      @delete="handleDelete"
-      @show-detail="openDetail"
-    />
+    <div class="flex-1 overflow-y-auto min-h-0 pb-16 lg:pb-0">
+      <ProductTable
+        :products="filteredProducts"
+        @edit="openEditForm"
+        @delete="handleDelete"
+        @show-detail="openDetail"
+      />
+    </div>
 
     <!-- Product Detail Modal -->
     <transition name="modal">

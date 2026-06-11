@@ -1,4 +1,6 @@
 import { ref } from 'vue'
+import { Capacitor } from '@capacitor/core'
+import { BleClient } from '@capacitor-community/bluetooth-le'
 import type { Transaction } from '@/types'
 
 export function usePrinter() {
@@ -62,32 +64,52 @@ export function usePrinter() {
     isPrinting.value = true
     error.value = ''
 
-    try {
-      if (!('bluetooth' in navigator)) {
-        throw new Error('Bluetooth tidak tersedia')
-      }
-
-      const device = await (navigator as any).bluetooth.requestDevice({
-        acceptAllDevices: true,
-        optionalServices: ['000018f0-0000-1000-8000-00805f9b34fb'],
-      })
-
-      const server = await device.gatt.connect()
-      const service = await server.getPrimaryService('000018f0-0000-1000-8000-00805f9b34fb')
-      const characteristic = await service.getCharacteristic('00002af1-0000-1000-8000-00805f9b34fb')
-
       const receiptData = formatReceipt(transaction, storeName, storeAddress)
       const encoder = new TextEncoder()
       const data = encoder.encode(receiptData)
-
-      // Send data in chunks (BLE has MTU limit)
       const chunkSize = 20
-      for (let i = 0; i < data.length; i += chunkSize) {
-        const chunk = data.slice(i, i + chunkSize)
-        await characteristic.writeValue(chunk)
-      }
 
-      device.gatt.disconnect()
+      if (Capacitor.isNativePlatform()) {
+        // Native Android BLE
+        await BleClient.initialize()
+        const device = await BleClient.requestDevice({
+          optionalServices: ['000018f0-0000-1000-8000-00805f9b34fb']
+        })
+        await BleClient.connect(device.deviceId)
+
+        for (let i = 0; i < data.length; i += chunkSize) {
+          const chunk = data.slice(i, i + chunkSize)
+          const dataView = new DataView(chunk.buffer, chunk.byteOffset, chunk.byteLength)
+          await BleClient.write(
+            device.deviceId,
+            '000018f0-0000-1000-8000-00805f9b34fb',
+            '00002af1-0000-1000-8000-00805f9b34fb',
+            dataView
+          )
+        }
+        await BleClient.disconnect(device.deviceId)
+      } else {
+        // Web Bluetooth
+        if (!('bluetooth' in navigator)) {
+          throw new Error('Bluetooth tidak tersedia')
+        }
+
+        const device = await (navigator as any).bluetooth.requestDevice({
+          acceptAllDevices: true,
+          optionalServices: ['000018f0-0000-1000-8000-00805f9b34fb'],
+        })
+
+        const server = await device.gatt.connect()
+        const service = await server.getPrimaryService('000018f0-0000-1000-8000-00805f9b34fb')
+        const characteristic = await service.getCharacteristic('00002af1-0000-1000-8000-00805f9b34fb')
+
+        for (let i = 0; i < data.length; i += chunkSize) {
+          const chunk = data.slice(i, i + chunkSize)
+          await characteristic.writeValue(chunk)
+        }
+
+        device.gatt.disconnect()
+      }
     } catch (err: any) {
       error.value = err.message || 'Gagal mencetak struk'
     } finally {

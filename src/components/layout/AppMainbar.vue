@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useCartStore } from '@/stores/cart'
 import { useLayoutStore } from '@/stores/layout'
 import { useSync } from '@/composables/useSync'
 
 const route = useRoute()
+const router = useRouter()
 const cartStore = useCartStore()
 const layoutStore = useLayoutStore()
 const { isOnline, isSyncing, queueCount } = useSync()
@@ -28,16 +29,6 @@ const today = computed(() => {
     <div class="flex items-center justify-between">
       <!-- Left Side -->
       <div class="flex items-center gap-3">
-        <!-- Burger Menu (Mobile Only) -->
-        <button 
-          class="lg:hidden p-2 -ml-2 text-neutral-600 hover:bg-neutral-100 rounded-lg transition-colors"
-          @click="layoutStore.toggleSidebar()"
-        >
-          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
-        </button>
-
         <!-- Page Title -->
         <div>
           <h2 class="text-xl font-bold text-neutral-800">{{ pageTitle }}</h2>
@@ -66,7 +57,7 @@ const today = computed(() => {
         <div class="relative">
           <button 
             class="p-2.5 rounded-full text-neutral-600 transition-all neumorphic hover:neumorphic-inset"
-            @click="layoutStore.toggleCartModal()"
+            @click="route.path !== '/' ? (router.push('/'), layoutStore.isCartModalOpen = true) : layoutStore.toggleCartModal()"
           >
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
