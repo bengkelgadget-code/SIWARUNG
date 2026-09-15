@@ -7,12 +7,13 @@
     "dev": "concurrently \"vite\" \"node server/index.js\"",
     "dev:frontend": "vite",
     "dev:server": "node server/index.js",
-    "build": "vite build",
+    "build": "vite build && node scripts/build-ota.js",
     "preview": "vite preview"
   },
   "devDependencies": {
     "@capacitor/cli": "^8.4.0",
     "@vitejs/plugin-vue": "^6.0.7",
+    "archiver": "^8.0.0",
     "autoprefixer": "^10.5.0",
     "concurrently": "^10.0.3",
     "postcss": "^8.5.15",
@@ -25,6 +26,8 @@
     "@capacitor-community/bluetooth-le": "^8.2.0",
     "@capacitor/android": "^8.4.0",
     "@capacitor/core": "^8.4.0",
+    "@capacitor/toast": "^8.0.1",
+    "@capgo/capacitor-updater": "^8.51.16",
     "@google/generative-ai": "^0.24.1",
     "@supabase/supabase-js": "^2.108.1",
     "axios": "^1.17.0",

@@ -12,6 +12,10 @@ import { useCartStore } from '@/stores/cart'
 import { usePurchaseStore } from '@/stores/purchases'
 import { useSync } from '@/composables/useSync'
 
+import { CapacitorUpdater } from '@capgo/capacitor-updater'
+import { Capacitor } from '@capacitor/core'
+import { Toast } from '@capacitor/toast'
+
 const settingsStore = useSettingsStore()
 const productStore = useProductStore()
 const layoutStore = useLayoutStore()
@@ -21,11 +25,37 @@ const purchaseStore = usePurchaseStore()
 // Initialize background sync worker
 useSync()
 
-onMounted(() => {
+onMounted(async () => {
   settingsStore.loadSettings()
   productStore.fetchProducts()
   cartStore.loadTransactions()
   purchaseStore.loadPurchases()
+  
+  if (Capacitor.isNativePlatform()) {
+    try {
+      await CapacitorUpdater.notifyAppReady()
+      
+      const response = await fetch('https://bengkelgadget-code.github.io/SIWARUNG/version.json', { cache: 'no-store' })
+      const data = await response.json()
+      
+      const currentVersion = localStorage.getItem('app_version')
+      if (data.version && data.version !== currentVersion) {
+        console.log('New update found:', data.version)
+        await Toast.show({ text: 'Mengunduh pembaruan...', duration: 'short' })
+        
+        const version = await CapacitorUpdater.download({
+          url: `https://bengkelgadget-code.github.io${data.url}`,
+          version: data.version
+        })
+        
+        localStorage.setItem('app_version', data.version)
+        await Toast.show({ text: 'Memuat pembaruan...', duration: 'short' })
+        await CapacitorUpdater.set(version)
+      }
+    } catch (err) {
+      console.error('Failed to check for updates', err)
+    }
+  }
 })
 </script>
 
