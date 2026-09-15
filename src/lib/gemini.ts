@@ -7,10 +7,11 @@ function getApiKey(): string {
   if (stored) {
     try {
       const parsed = JSON.parse(stored)
-      return parsed.geminiApiKey || ''
+      if (parsed.geminiApiKey) return parsed.geminiApiKey
     } catch (e) {}
   }
-  return ''
+  // Fallback to bundled environment variable from GitHub Secrets
+  return import.meta.env.VITE_GEMINI_API_KEY || ''
 }
 
 // Convert base64 data URL to generative AI part

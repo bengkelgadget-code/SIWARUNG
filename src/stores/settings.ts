@@ -9,7 +9,7 @@ export const useSettingsStore = defineStore('settings', () => {
   const storeName = ref('Warung Retail')
   const storeAddress = ref('')
   const currency = ref('IDR')
-  const geminiApiKey = ref('')
+  const geminiApiKey = ref(import.meta.env.VITE_GEMINI_API_KEY || '')
 
   function checkBluetoothSupport() {
     isBluetoothSupported.value = 'bluetooth' in navigator
