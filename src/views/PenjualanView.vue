@@ -40,10 +40,15 @@ interface FlyingItem {
 }
 const flyingItems = ref<FlyingItem[]>([])
 
-function triggerCartAnimation(product: Product) {
+function triggerCartAnimation(product: Product, event?: MouseEvent) {
   playBeep()
-  const startX = window.innerWidth / 2 - 24
-  const startY = window.innerHeight / 2 - 24
+  let startX = window.innerWidth / 2 - 24
+  let startY = window.innerHeight / 2 - 24
+  
+  if (event) {
+    startX = event.clientX - 24
+    startY = event.clientY - 24
+  }
   
   // Estimate cart position (bottom center for mobile, right for desktop)
   const isMobile = window.innerWidth < 1024
@@ -138,9 +143,9 @@ async function handleAiSearch() {
   }
 }
 
-function addToCart(product: Product) {
+function addToCart(product: Product, event?: MouseEvent) {
   cartStore.addItem(product)
-  triggerCartAnimation(product)
+  triggerCartAnimation(product, event)
   searchResults.value = []
 }
 
@@ -284,7 +289,7 @@ function getAvailableStock(product: Product) {
             v-for="product in searchResults"
             :key="product.id"
             class="flex items-center justify-between p-3 bg-white shadow-sm hover:shadow-md rounded-xl transition-all cursor-pointer border-2 border-neutral-100 hover:border-primary-200"
-            @click="addToCart(product)"
+            @click="addToCart(product, $event)"
           >
             <div class="min-w-0">
               <p class="font-medium text-neutral-800 text-sm truncate">{{ product.name }}</p>
@@ -320,7 +325,7 @@ function getAvailableStock(product: Product) {
               v-for="product in filteredProducts"
               :key="product.id"
               class="p-3 bg-white shadow-sm hover:shadow-md rounded-xl transition-all cursor-pointer border-2 border-neutral-100 hover:border-primary-200"
-              @click="addToCart(product)"
+              @click="addToCart(product, $event)"
             >
               <div class="w-full aspect-square bg-neutral-200 rounded-md mb-2 flex items-center justify-center overflow-hidden">
                 <img v-if="product.image" :src="product.image" :alt="product.name" class="w-full h-full object-cover" />
