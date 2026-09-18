@@ -59,6 +59,7 @@ async function callGeminiWithRetry(
       } catch (err: any) {
         const is503 = err.message?.includes('503') || err.message?.includes('high demand')
         const is429 = err.message?.includes('429') || err.message?.includes('quota')
+        const isNotFound = err.message?.includes('not found') || err.message?.includes('Invalid')
         
         if (is503 || is429) {
           if (attempt === maxRetries) break
@@ -66,8 +67,12 @@ async function callGeminiWithRetry(
           const delay = attempt * 1500
           onProgress?.(`Server penuh, menunggu ${delay/1000} detik...`)
           await sleep(delay)
+        } else if (isNotFound) {
+          // Model tidak ditemukan (mungkin typo seperti 2.5), langsung coba model cadangan berikutnya
+          console.warn(`Model ${modelName} gagal:`, err.message)
+          break
         } else {
-          throw err // Invalid API key or other hard errors
+          throw err // Error fatal lainnya (API Key salah)
         }
       }
     }
