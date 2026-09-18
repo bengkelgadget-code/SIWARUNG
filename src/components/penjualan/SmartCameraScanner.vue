@@ -15,7 +15,6 @@ const videoRef = ref<HTMLVideoElement | null>(null)
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 
 const isCameraReady = ref(false)
-const isScanning = ref(false)
 const scanStatusMsg = ref('')
 const errorMsg = ref('')
 let stream: MediaStream | null = null
@@ -53,8 +52,14 @@ function stopCamera() {
   }
 }
 
+import { playBeep } from '@/lib/sound'
+
+// State for queued items being processed
+const queuedScans = ref(0)
+const lastScannedImage = ref('')
+
 async function captureAndScan() {
-  if (!videoRef.value || !canvasRef.value || !isCameraReady.value || isScanning.value) return
+  if (!videoRef.value || !canvasRef.value || !isCameraReady.value) return
 
   const video = videoRef.value
   const canvas = canvasRef.value
@@ -64,7 +69,7 @@ async function captureAndScan() {
     return
   }
 
-  // Scale down to max 512px to dramatically speed up AI upload time
+  // Scale down to max 512px
   const maxDim = 512
   let scale = 1
   if (video.videoWidth > maxDim || video.videoHeight > maxDim) {
@@ -83,42 +88,43 @@ async function captureAndScan() {
     return
   }
   
-  // Convert to base64 jpeg with higher compression
   const base64Image = canvas.toDataURL('image/jpeg', 0.6)
+  lastScannedImage.value = base64Image
 
-  isScanning.value = true
-  scanStatusMsg.value = 'Menganalisis gambar...'
+  // UI Feedback langsung (Instan)
+  playBeep()
+  queuedScans.value++
+  scanStatusMsg.value = `Memproses ${queuedScans.value} antrean...`
   errorMsg.value = ''
 
+  // Proses di background tanpa memblokir kamera
+  processImageBackground(base64Image)
+}
+
+async function processImageBackground(base64Image: string) {
   try {
     const { found, product, confidenceScore } = await geminiApi.matchProductFromImage(
       base64Image, 
-      productStore.products,
-      (msg) => { scanStatusMsg.value = msg }
+      productStore.products
     )
 
-    if (found && product) {
-      if (confidenceScore >= 0.5) {
-        // Berhasil!
-        scanStatusMsg.value = '✅ ' + product.name
-        emit('scanned', product)
-        
-        // Jeda bentar biar user lihat sukses
-        setTimeout(() => {
-          if (!isAutoMode.value) scanStatusMsg.value = ''
-        }, 1500)
-      } else {
-        errorMsg.value = 'Barang kurang jelas, silakan foto ulang.'
-      }
+    if (found && product && confidenceScore >= 0.5) {
+      scanStatusMsg.value = '✅ ' + product.name
+      emit('scanned', product)
+      setTimeout(() => {
+        if (!isAutoMode.value && queuedScans.value === 0) scanStatusMsg.value = ''
+      }, 1500)
     } else {
-      errorMsg.value = 'Barang tidak ditemukan di katalog.'
+      errorMsg.value = 'Barang terakhir tidak dikenali.'
     }
   } catch (err: any) {
     errorMsg.value = err.message || 'Gagal memproses gambar.'
   } finally {
-    isScanning.value = false
-    if (!isAutoMode.value && !errorMsg.value) {
-      scanStatusMsg.value = ''
+    queuedScans.value--
+    if (queuedScans.value > 0) {
+      scanStatusMsg.value = `Sisa ${queuedScans.value} antrean...`
+    } else if (!isAutoMode.value && !errorMsg.value) {
+      setTimeout(() => { scanStatusMsg.value = '' }, 2000)
     }
   }
 }
@@ -127,10 +133,9 @@ function toggleAutoMode() {
   isAutoMode.value = !isAutoMode.value
   if (isAutoMode.value) {
     autoScanInterval = setInterval(() => {
-      if (!isScanning.value) {
-        captureAndScan()
-      }
-    }, 3000)
+      // Di mode auto, kita scan setiap 2 detik
+      captureAndScan()
+    }, 2000)
   } else {
     if (autoScanInterval) clearInterval(autoScanInterval)
   }
@@ -186,16 +191,25 @@ onUnmounted(() => {
           <div class="absolute -bottom-1 -right-1 w-6 h-6 border-b-4 border-r-4 border-primary-500 rounded-br-lg"></div>
         </div>
       </div>
-      
       <!-- Scan Line Animation -->
-      <div v-if="isScanning" class="absolute top-0 left-0 w-full h-1 bg-primary-500/80 shadow-[0_0_8px_theme(colors.primary.500)] animate-scan-line pointer-events-none"></div>
+      <div v-if="queuedScans > 0" class="absolute top-0 left-0 w-full h-1 bg-primary-500/80 shadow-[0_0_8px_theme(colors.primary.500)] animate-scan-line pointer-events-none"></div>
 
       <!-- Loading / Status Overlay -->
-      <div v-if="isScanning || scanStatusMsg" class="absolute top-4 left-1/2 -translate-x-1/2 z-10 w-11/12 max-w-[280px]">
+      <div v-if="queuedScans > 0 || scanStatusMsg" class="absolute top-4 left-1/2 -translate-x-1/2 z-10 w-11/12 max-w-[280px]">
         <div class="bg-black/70 backdrop-blur text-white text-xs text-center py-2 px-3 rounded-full shadow-lg border border-white/10 truncate">
           {{ scanStatusMsg }}
         </div>
       </div>
+      
+      <!-- Thumbnail Overlay -->
+      <transition name="fade">
+        <div v-if="lastScannedImage" class="absolute bottom-4 left-4 w-12 h-12 rounded-lg border-2 border-primary-500 overflow-hidden shadow-lg shadow-black/50 bg-black">
+          <img :src="lastScannedImage" class="w-full h-full object-cover opacity-80" />
+          <div v-if="queuedScans > 0" class="absolute inset-0 flex items-center justify-center bg-black/40">
+            <div class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+          </div>
+        </div>
+      </transition>
     </div>
 
     <!-- Error Msg -->
@@ -206,16 +220,14 @@ onUnmounted(() => {
     <!-- Controls -->
     <div class="mt-4 flex flex-col items-center gap-3">
       <button 
-        class="w-16 h-16 rounded-full border-4 flex items-center justify-center transition-all active:scale-95"
-        :class="[isScanning ? 'border-neutral-300 bg-neutral-200 cursor-not-allowed' : 'border-primary-200 bg-primary-500 hover:bg-primary-600 shadow-lg shadow-primary-500/30']"
-        :disabled="isScanning || !isCameraReady"
+        class="w-16 h-16 rounded-full border-4 flex items-center justify-center transition-all active:scale-95 border-primary-200 bg-primary-500 hover:bg-primary-600 shadow-lg shadow-primary-500/30"
+        :disabled="!isCameraReady"
         @click="captureAndScan"
       >
-        <svg v-if="!isScanning" class="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg class="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
         </svg>
-        <div v-else class="w-5 h-5 rounded-full border-2 border-neutral-400 border-t-neutral-600 animate-spin"></div>
       </button>
 
       <div class="flex items-center gap-2">

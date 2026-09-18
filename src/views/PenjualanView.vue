@@ -179,6 +179,13 @@ function addToCart(product: Product, event?: MouseEvent) {
 }
 
 function onBarcodeScanned(product: Product) {
+  const existing = cartStore.items.find(item => item.product.id === product.id)
+  if (existing) {
+    if (!window.confirm(`Barang "${product.name}" sudah ada di keranjang.\nApakah Anda ingin menambahkannya lagi?`)) {
+      return // Dibatalkan oleh pengguna
+    }
+  }
+
   cartStore.addItem(product)
   triggerCartAnimation(product)
   if (scannerType.value === 'barcode') {
