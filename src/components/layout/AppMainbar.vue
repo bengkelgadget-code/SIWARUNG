@@ -56,6 +56,7 @@ const today = computed(() => {
         <!-- Cart Badge -->
         <div class="relative">
           <button 
+            id="cart-icon-main"
             class="p-2 rounded-full text-neutral-600 transition-all neumorphic hover:neumorphic-inset"
             @click="route.path !== '/' ? (router.push('/'), layoutStore.isCartModalOpen = true) : layoutStore.toggleCartModal()"
           >

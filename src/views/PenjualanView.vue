@@ -28,54 +28,83 @@ const showScanner = ref(false)
 const scannerType = ref<'smart' | 'barcode'>('smart')
 const aiSuggestion = ref('')
 
-// Flying Animation State
-interface FlyingItem {
-  id: number
-  name: string
-  x: number
-  y: number
-  targetX: number
-  targetY: number
-  flying: boolean
-}
-const flyingItems = ref<FlyingItem[]>([])
-
 function triggerCartAnimation(product: Product, event?: MouseEvent) {
   playBeep()
-  let startX = window.innerWidth / 2 - 24
-  let startY = window.innerHeight / 2 - 24
+  
+  const cartIconEl = document.getElementById('cart-icon-main')
+  
+  const clone = document.createElement('div')
+  clone.style.position = 'fixed'
+  clone.style.zIndex = '9999'
+  clone.style.width = '64px'
+  clone.style.height = '64px'
+  clone.style.borderRadius = '0.5rem'
+  clone.style.transition = 'all 0.8s cubic-bezier(0.25, 1, 0.5, 1)'
+  clone.style.opacity = '1'
+  clone.style.overflow = 'hidden'
+  clone.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.1)'
+  
+  if (product.image) {
+    const img = document.createElement('img')
+    img.src = product.image
+    img.style.width = '100%'
+    img.style.height = '100%'
+    img.style.objectFit = 'cover'
+    clone.appendChild(img)
+  } else {
+    clone.style.backgroundColor = '#e5e7eb'
+    const txt = document.createElement('div')
+    txt.innerText = product.name.substring(0, 3).toUpperCase()
+    txt.style.width = '100%'
+    txt.style.height = '100%'
+    txt.style.display = 'flex'
+    txt.style.alignItems = 'center'
+    txt.style.justifyContent = 'center'
+    txt.style.fontSize = '14px'
+    txt.style.fontWeight = 'bold'
+    txt.style.color = '#4b5563'
+    clone.appendChild(txt)
+  }
+
+  let startX = window.innerWidth / 2 - 32
+  let startY = window.innerHeight / 2 - 32
   
   if (event) {
-    startX = event.clientX - 24
-    startY = event.clientY - 24
-  }
-  
-  // Estimate cart position (bottom center for mobile, right for desktop)
-  const isMobile = window.innerWidth < 1024
-  let targetX = isMobile ? window.innerWidth / 2 - 24 : window.innerWidth - 60
-  let targetY = window.innerHeight - 60
-
-  const btnCart = document.getElementById('btn-cart-mobile')
-  if (btnCart) {
-    const rect = btnCart.getBoundingClientRect()
-    targetX = rect.left + rect.width / 2 - 24
-    targetY = rect.top + rect.height / 2 - 24
+    const cardEl = event.currentTarget as HTMLElement
+    if (cardEl && cardEl.style) {
+      cardEl.style.transform = 'scale(0.95)'
+      setTimeout(() => cardEl.style.transform = 'scale(1)', 150)
+      const rect = cardEl.getBoundingClientRect()
+      startX = rect.left + 16
+      startY = rect.top + 16
+    } else {
+      startX = event.clientX - 32
+      startY = event.clientY - 32
+    }
   }
 
-  const id = Date.now()
-  flyingItems.value.push({
-    id, name: product.name.substring(0, 8),
-    x: startX, y: startY, targetX, targetY, flying: false
-  })
+  clone.style.top = startY + 'px'
+  clone.style.left = startX + 'px'
+  
+  document.body.appendChild(clone)
+  
+  clone.getBoundingClientRect() // Force reflow
+  
+  let destX = window.innerWidth - 60
+  let destY = window.innerHeight - 60
+  
+  if (cartIconEl) {
+    const cartRect = cartIconEl.getBoundingClientRect()
+    destX = cartRect.left + (cartRect.width / 2) - 32
+    destY = cartRect.top + (cartRect.height / 2) - 32
+  }
+
+  clone.style.transform = `translate(${destX - startX}px, ${destY - startY}px) scale(0.1)`
+  clone.style.opacity = '0.5'
   
   setTimeout(() => {
-    const item = flyingItems.value.find(i => i.id === id)
-    if (item) item.flying = true
-  }, 50)
-  
-  setTimeout(() => {
-    flyingItems.value = flyingItems.value.filter(i => i.id !== id)
-  }, 750)
+    clone.remove()
+  }, 800)
 }
 
 // Real-time filter: as user types, filter the catalog instantly
@@ -375,22 +404,6 @@ function getAvailableStock(product: Product) {
         </div>
       </div>
     </transition>
-
-    <!-- Flying Cart Animation Elements -->
-    <div
-      v-for="anim in flyingItems"
-      :key="anim.id"
-      class="fixed z-50 w-12 h-12 bg-white rounded-full border-2 border-primary-500 flex items-center justify-center shadow-[0_0_15px_rgba(var(--color-primary-500),0.5)] transition-all duration-700 pointer-events-none"
-      :style="{
-        left: anim.x + 'px',
-        top: anim.y + 'px',
-        transform: anim.flying ? `translate(${anim.targetX - anim.x}px, ${anim.targetY - anim.y}px) scale(0.2)` : 'scale(1)',
-        opacity: anim.flying ? 0 : 1,
-        transitionTimingFunction: 'cubic-bezier(0.25, 1, 0.5, 1)'
-      }"
-    >
-      <span class="text-[10px] font-bold text-primary-600 truncate px-1 max-w-full">{{ anim.name }}</span>
-    </div>
 
   </div>
 </template>

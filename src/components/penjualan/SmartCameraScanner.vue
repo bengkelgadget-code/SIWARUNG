@@ -56,17 +56,21 @@ function stopCamera() {
 async function captureAndScan() {
   if (!videoRef.value || !canvasRef.value || !isCameraReady.value || isScanning.value) return
 
-  // Capture frame to canvas
-  const video = videoRef.value
-  const canvas = canvasRef.value
-  canvas.width = video.videoWidth
-  canvas.height = video.videoHeight
+  // Scale down to max 512px to dramatically speed up AI upload time
+  const maxDim = 512
+  let scale = 1
+  if (video.videoWidth > maxDim || video.videoHeight > maxDim) {
+    scale = Math.min(maxDim / video.videoWidth, maxDim / video.videoHeight)
+  }
+  
+  canvas.width = video.videoWidth * scale
+  canvas.height = video.videoHeight * scale
   const ctx = canvas.getContext('2d')
   if (!ctx) return
   ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
   
-  // Convert to base64 jpeg
-  const base64Image = canvas.toDataURL('image/jpeg', 0.8)
+  // Convert to base64 jpeg with higher compression
+  const base64Image = canvas.toDataURL('image/jpeg', 0.6)
 
   isScanning.value = true
   scanStatusMsg.value = 'Menganalisis gambar...'
