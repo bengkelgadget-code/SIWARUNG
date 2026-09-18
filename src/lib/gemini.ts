@@ -183,6 +183,52 @@ Struktur JSON WAJIB:
     } catch (err: any) {
       console.error('Gemini Search Error:', err)
       throw new Error(err.message || 'Gagal melakukan pencarian cerdas dengan AI.')
+  },
+
+  // Match a product image directly to the store inventory catalog
+  async matchProductFromImage(base64Image: string, products: Product[], onProgress?: (msg: string) => void): Promise<{ found: boolean, product?: Product, confidenceScore: number }> {
+    const apiKey = getApiKey()
+    if (!apiKey) throw new Error('API Key Gemini belum dikonfigurasi di menu Pengaturan.')
+    if (!products.length) return { found: false, confidenceScore: 0 }
+
+    // Bawa ID dan Name saja untuk menghemat token
+    const catalog = products.map(p => ({ id: p.id, name: p.name, category: p.category, barcode: p.barcode }))
+    
+    const prompt = `Anda adalah asisten Kasir POS Pintar.
+Berikut adalah foto dari kamera kasir. Identifikasi barang yang ada di foto tersebut.
+Lalu cocokkan barang tersebut dengan salah satu dari daftar katalog toko ini:
+${JSON.stringify(catalog)}
+
+Perhatikan baik-baik warna, kemasan, rasa, varian, dan merek.
+Jika Anda menemukan barang yang cocok di katalog, kembalikan ID-nya.
+Jika barang tidak ada di katalog atau gambar buram/bukan barang jualan, kembalikan found: false.
+
+Struktur JSON WAJIB:
+{
+  "found": boolean,
+  "productId": "id-produk-yang-cocok-dari-katalog-jika-ada",
+  "confidenceScore": 0.95
+}`
+
+    const imagePart = base64ToGenerativePart(base64Image)
+    
+    try {
+      let text = await callGeminiWithRetry(apiKey, prompt, imagePart, 2, onProgress)
+      text = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim()
+      const json = JSON.parse(text)
+      
+      if (json.found && json.productId) {
+        const matchedProduct = products.find(p => p.id === json.productId)
+        return { 
+          found: !!matchedProduct, 
+          product: matchedProduct, 
+          confidenceScore: json.confidenceScore || 0 
+        }
+      }
+      return { found: false, confidenceScore: 0 }
+    } catch (err: any) {
+      console.error('Gemini Match Product Error:', err)
+      throw new Error(err.message || 'Gagal mengenali barang dari kamera.')
     }
   }
 }
