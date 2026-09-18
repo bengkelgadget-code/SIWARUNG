@@ -191,28 +191,20 @@ Struktur JSON WAJIB:
     }
   },
 
-  // Match a product image directly to the store inventory catalog
+  // Match a product image directly to the store inventory catalog using local fuzzy search
   async matchProductFromImage(base64Image: string, products: Product[], onProgress?: (msg: string) => void): Promise<{ found: boolean, product?: Product, confidenceScore: number }> {
     const apiKey = getApiKey()
     if (!apiKey) throw new Error('API Key Gemini belum dikonfigurasi di menu Pengaturan.')
     if (!products.length) return { found: false, confidenceScore: 0 }
 
-    // Bawa ID dan Name saja untuk menghemat token
-    const catalog = products.map(p => ({ id: p.id, name: p.name, category: p.category, barcode: p.barcode }))
-    
-    const prompt = `Anda adalah asisten Kasir POS Pintar.
-Berikut adalah foto dari kamera kasir. Identifikasi barang yang ada di foto tersebut.
-Lalu cocokkan barang tersebut dengan salah satu dari daftar katalog toko ini:
-${JSON.stringify(catalog)}
-
-Perhatikan baik-baik warna, kemasan, rasa, varian, dan merek.
-Jika Anda menemukan barang yang cocok di katalog, kembalikan ID-nya.
-Jika barang tidak ada di katalog atau gambar buram/bukan barang jualan, kembalikan found: false.
+    const prompt = `Anda adalah asisten identifikasi produk.
+Tugas Anda HANYA membaca merek, nama produk, dan varian/rasa/ukuran dari foto kemasan ini.
+Jangan tambahkan kata-kata lain.
+Jika tidak ada barang atau gambar buram, kembalikan teks kosong.
 
 Struktur JSON WAJIB:
 {
-  "found": boolean,
-  "productId": "id-produk-yang-cocok-dari-katalog-jika-ada",
+  "productName": "merek dan nama produk beserta variannya",
   "confidenceScore": 0.95
 }`
 
@@ -223,12 +215,48 @@ Struktur JSON WAJIB:
       text = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim()
       const json = JSON.parse(text)
       
-      if (json.found && json.productId) {
-        const matchedProduct = products.find(p => p.id === json.productId)
-        return { 
-          found: !!matchedProduct, 
-          product: matchedProduct, 
-          confidenceScore: json.confidenceScore || 0 
+      if (json.productName) {
+        // LOCAL FUZZY SEARCH
+        const normalize = (s: string) => s.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').trim()
+        const searchStr = normalize(json.productName)
+        const searchWords = searchStr.split(/\s+/).filter(w => w.length > 1)
+        
+        let bestMatch: Product | undefined
+        let highestScore = 0
+
+        for (const p of products) {
+          const pName = normalize(p.name)
+          let score = 0
+          
+          if (pName === searchStr) {
+            score = 1
+          } else if (pName.includes(searchStr)) {
+            score = 0.95
+          } else if (searchStr.includes(pName) && pName.length > 3) {
+            score = 0.9
+          } else {
+            let matches = 0
+            for (const sWord of searchWords) {
+              if (pName.includes(sWord)) matches++
+            }
+            if (searchWords.length > 0) {
+               score = (matches / searchWords.length) * 0.8
+            }
+          }
+
+          if (score > highestScore) {
+            highestScore = score
+            bestMatch = p
+          }
+        }
+
+        // Ambang batas (threshold) 50% kecocokan
+        if (bestMatch && highestScore >= 0.5) {
+          return { 
+            found: true, 
+            product: bestMatch, 
+            confidenceScore: highestScore 
+          }
         }
       }
       return { found: false, confidenceScore: 0 }
