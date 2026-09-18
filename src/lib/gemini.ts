@@ -35,7 +35,18 @@ async function callGeminiWithRetry(
   maxRetries = 2,
   onProgress?: (msg: string) => void
 ): Promise<string> {
-  const modelsToTry = ['gemini-flash-latest', 'gemini-3.8-flash', 'gemini-3.8-flash-lite', 'gemini-1.5-flash']
+  const modelsToTry = [
+    'gemini-2.7-flash', 
+    'gemini-2.6-flash', 
+    'gemini-2.5-flash', 
+    'gemini-2.4-flash', 
+    'gemini-2.3-flash', 
+    'gemini-2.2-flash', 
+    'gemini-2.1-flash',
+    'gemini-2.0-flash',
+    'gemini-1.5-flash',
+    'gemini-flash-latest'
+  ]
   
   for (const modelName of modelsToTry) {
     const genAI = new GoogleGenerativeAI(apiKey)
@@ -46,21 +57,33 @@ async function callGeminiWithRetry(
     
     let attempt = 0
     while (attempt <= maxRetries) {
+      const startTime = performance.now()
       try {
         if (attempt > 0) {
           onProgress?.(`Server sibuk, mencoba ulang (ke-${attempt} dengan ${modelName})...`)
-        } else if (modelName !== modelsToTry[0]) {
-          onProgress?.(`Beralih ke model cadangan (${modelName})...`)
+        } else {
+          onProgress?.(`Mencoba model: ${modelName}...`)
         }
 
         const parts = imagePart ? [prompt, imagePart] : [prompt]
         const result = await model.generateContent(parts)
+        
+        const endTime = performance.now()
+        const durationStr = ((endTime - startTime) / 1000).toFixed(2) + ' detik'
+        console.log(`✅ [BERHASIL] Model: ${modelName} | Waktu: ${durationStr}`)
+        onProgress?.(`Model ${modelName} selesai dalam ${durationStr}`)
+        
         return result.response.text()
       } catch (err: any) {
+        const endTime = performance.now()
+        const durationStr = ((endTime - startTime) / 1000).toFixed(2) + ' detik'
+        
         const is503 = err.message?.includes('503') || err.message?.includes('high demand')
         const is429 = err.message?.includes('429') || err.message?.includes('quota')
-        const isNotFound = err.message?.includes('not found') || err.message?.includes('Invalid')
+        const isNotFound = err.message?.includes('not found') || err.message?.includes('Invalid') || err.message?.includes('not support')
         
+        console.warn(`❌ [GAGAL] Model: ${modelName} | Waktu: ${durationStr} | Error: ${err.message}`)
+
         if (is503 || is429) {
           if (attempt === maxRetries) break
           attempt++
@@ -68,11 +91,11 @@ async function callGeminiWithRetry(
           onProgress?.(`Server penuh, menunggu ${delay/1000} detik...`)
           await sleep(delay)
         } else if (isNotFound) {
-          // Model tidak ditemukan (mungkin typo seperti 2.5), langsung coba model cadangan berikutnya
-          console.warn(`Model ${modelName} gagal:`, err.message)
+          // Model tidak ditemukan atau tidak valid, coba model berikutnya
           break
         } else {
-          throw err // Error fatal lainnya (API Key salah)
+          // Error lain (misal API key salah)
+          throw err 
         }
       }
     }
