@@ -111,7 +111,8 @@ async function processImageBackground(base64Image: string, ghostId: string) {
   try {
     const { found, product, confidenceScore } = await geminiApi.matchProductFromImage(
       base64Image, 
-      productStore.products
+      productStore.products,
+      (msg) => { scanStatusMsg.value = msg }
     )
 
     if (found && product && confidenceScore >= 0.5) {
