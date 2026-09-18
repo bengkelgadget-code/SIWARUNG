@@ -78,7 +78,7 @@ export const useSettingsStore = defineStore('settings', () => {
       storeAddress.value = data.storeAddress || ''
       currency.value = data.currency || 'IDR'
       printerDevice.value = data.printerDevice || null
-      geminiApiKey.value = data.geminiApiKey || ''
+      geminiApiKey.value = data.geminiApiKey || import.meta.env.VITE_GEMINI_API_KEY || ''
     }
     checkBluetoothSupport()
 
