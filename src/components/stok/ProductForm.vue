@@ -20,6 +20,7 @@ const form = ref({
   barcode: '',
   name: '',
   category: '',
+  buyPrice: 0,
   price: 0,
   stock: 0,
   unit: 'pcs',
@@ -62,6 +63,7 @@ onMounted(() => {
       barcode: props.product.barcode,
       name: props.product.name,
       category: props.product.category,
+      buyPrice: props.product.buyPrice || 0,
       price: props.product.price,
       stock: props.product.stock,
       unit: props.product.unit,
@@ -275,7 +277,11 @@ const isSubmitting = ref(false)
 function handleSubmit() {
   if (isSubmitting.value) return
   isSubmitting.value = true
-  emit('save', { ...form.value })
+  const dataToSave = { ...form.value }
+  if (!dataToSave.barcode || dataToSave.barcode.trim() === '') {
+    dataToSave.barcode = 'BR-' + Date.now()
+  }
+  emit('save', dataToSave)
   // parent will unmount this component, so isSubmitting will reset on next open
 }
 </script>
@@ -388,9 +394,15 @@ function handleSubmit() {
               </select>
             </div>
 
-            <!-- Harga -->
+            <!-- Harga Beli -->
             <div>
-              <label class="block text-xs font-bold text-black mb-0.5">Harga (Rp)</label>
+              <label class="block text-xs font-bold text-black mb-0.5">Harga Beli (Rp)</label>
+              <input v-model.number="form.buyPrice" type="number" class="input-field" placeholder="0" min="0" required />
+            </div>
+
+            <!-- Harga Jual -->
+            <div>
+              <label class="block text-xs font-bold text-black mb-0.5">Harga Jual (Rp)</label>
               <input v-model.number="form.price" type="number" class="input-field" placeholder="0" min="0" required />
             </div>
 
@@ -402,14 +414,13 @@ function handleSubmit() {
 
             <!-- Barcode (below price, above description) -->
             <div class="col-span-2">
-              <label class="block text-xs font-bold text-black mb-0.5">Barcode</label>
+              <label class="block text-xs font-bold text-black mb-0.5">Barcode (Opsional)</label>
               <div class="flex gap-2">
                 <input
                   v-model="form.barcode"
                   type="text"
                   class="input-field flex-1 font-mono"
-                  placeholder="8991234567890"
-                  required
+                  placeholder="Scan atau ketik barcode..."
                 />
                 <button
                   type="button"

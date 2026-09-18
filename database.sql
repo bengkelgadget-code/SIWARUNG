@@ -4,6 +4,7 @@ CREATE TABLE products (
   barcode TEXT UNIQUE,
   name TEXT NOT NULL,
   category TEXT NOT NULL,
+  "buyPrice" NUMERIC NOT NULL DEFAULT 0,
   price NUMERIC NOT NULL DEFAULT 0,
   stock NUMERIC NOT NULL DEFAULT 0,
   unit TEXT NOT NULL DEFAULT 'pcs',
@@ -12,6 +13,9 @@ CREATE TABLE products (
   "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
   "updatedAt" TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
+
+-- JIKA UPDATE DARI VERSI SEBELUMNYA, JALANKAN PERINTAH INI DI SQL EDITOR SUPABASE:
+-- ALTER TABLE products ADD COLUMN "buyPrice" NUMERIC NOT NULL DEFAULT 0;
 
 -- Buat tabel riwayat penjualan (kasir)
 CREATE TABLE transactions (

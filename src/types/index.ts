@@ -3,6 +3,7 @@ export interface Product {
   barcode: string
   name: string
   category: string
+  buyPrice?: number
   price: number
   stock: number
   unit: string
