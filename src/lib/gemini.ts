@@ -183,6 +183,7 @@ Struktur JSON WAJIB:
     } catch (err: any) {
       console.error('Gemini Search Error:', err)
       throw new Error(err.message || 'Gagal melakukan pencarian cerdas dengan AI.')
+    }
   },
 
   // Match a product image directly to the store inventory catalog
