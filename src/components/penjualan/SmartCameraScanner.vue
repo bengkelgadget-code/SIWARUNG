@@ -6,6 +6,9 @@ import type { Product } from '@/types'
 
 const emit = defineEmits<{
   (e: 'scanned', product: Product): void
+  (e: 'ghost-add', ghostId: string): void
+  (e: 'ghost-resolve', payload: { ghostId: string, product: Product }): void
+  (e: 'ghost-remove', ghostId: string): void
   (e: 'close'): void
   (e: 'switch-to-barcode'): void
 }>()
@@ -97,11 +100,14 @@ async function captureAndScan() {
   scanStatusMsg.value = `Memproses ${queuedScans.value} antrean...`
   errorMsg.value = ''
 
+  const ghostId = 'ghost-' + Date.now()
+  emit('ghost-add', ghostId)
+
   // Proses di background tanpa memblokir kamera
-  processImageBackground(base64Image)
+  processImageBackground(base64Image, ghostId)
 }
 
-async function processImageBackground(base64Image: string) {
+async function processImageBackground(base64Image: string, ghostId: string) {
   try {
     const { found, product, confidenceScore } = await geminiApi.matchProductFromImage(
       base64Image, 
@@ -110,14 +116,16 @@ async function processImageBackground(base64Image: string) {
 
     if (found && product && confidenceScore >= 0.5) {
       scanStatusMsg.value = '✅ ' + product.name
-      emit('scanned', product)
+      emit('ghost-resolve', { ghostId, product })
       setTimeout(() => {
         if (!isAutoMode.value && queuedScans.value === 0) scanStatusMsg.value = ''
       }, 1500)
     } else {
+      emit('ghost-remove', ghostId)
       errorMsg.value = 'Barang terakhir tidak dikenali.'
     }
   } catch (err: any) {
+    emit('ghost-remove', ghostId)
     errorMsg.value = err.message || 'Gagal memproses gambar.'
   } finally {
     queuedScans.value--

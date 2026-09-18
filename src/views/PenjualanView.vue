@@ -180,7 +180,7 @@ function addToCart(product: Product, event?: MouseEvent) {
 
 function onBarcodeScanned(product: Product) {
   const existing = cartStore.items.find(item => item.product.id === product.id)
-  if (existing) {
+  if (existing && !product.id.startsWith('ghost-')) {
     if (!window.confirm(`Barang "${product.name}" sudah ada di keranjang.\nApakah Anda ingin menambahkannya lagi?`)) {
       return // Dibatalkan oleh pengguna
     }
@@ -190,6 +190,42 @@ function onBarcodeScanned(product: Product) {
   triggerCartAnimation(product)
   if (scannerType.value === 'barcode') {
     showScanner.value = false
+  }
+}
+
+function onGhostAdd(ghostId: string) {
+  const ghostProduct: Product = {
+    id: ghostId,
+    name: 'Sedang Menganalisis...',
+    category: 'AI',
+    price: 0,
+    buyPrice: 0,
+    stock: 0,
+    barcode: ''
+  }
+  cartStore.addItem(ghostProduct)
+  triggerCartAnimation(ghostProduct)
+}
+
+function onGhostResolve({ ghostId, product }: { ghostId: string, product: Product }) {
+  const idx = cartStore.items.findIndex(i => i.product.id === ghostId)
+  if (idx !== -1) {
+    const existingIdx = cartStore.items.findIndex(i => i.product.id === product.id)
+    if (existingIdx !== -1 && existingIdx !== idx) {
+       cartStore.items[existingIdx].quantity += cartStore.items[idx].quantity
+       cartStore.items[existingIdx].subtotal = cartStore.items[existingIdx].quantity * cartStore.items[existingIdx].product.price
+       cartStore.items.splice(idx, 1)
+    } else {
+       cartStore.items[idx].product = product
+       cartStore.items[idx].subtotal = cartStore.items[idx].quantity * product.price
+    }
+  }
+}
+
+function onGhostRemove(ghostId: string) {
+  const idx = cartStore.items.findIndex(i => i.product.id === ghostId)
+  if (idx !== -1) {
+    cartStore.items.splice(idx, 1)
   }
 }
 
@@ -301,6 +337,9 @@ function getAvailableStock(product: Product) {
         <SmartCameraScanner
           v-if="scannerType === 'smart'"
           @scanned="onBarcodeScanned"
+          @ghost-add="onGhostAdd"
+          @ghost-resolve="onGhostResolve"
+          @ghost-remove="onGhostRemove"
           @close="showScanner = false"
           @switch-to-barcode="scannerType = 'barcode'"
         />
